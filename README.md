@@ -42,6 +42,43 @@ npm run test:headed
 npm run report
 ```
 
+## Docker
+
+Run the full test suite in a container (uses the official Playwright image with Chromium pre-installed):
+
+```bash
+cp .env.example .env   # configure credentials first
+npm run docker:build
+npm run docker:test
+```
+
+Or with Docker Compose directly:
+
+```bash
+docker compose build test
+docker compose run --rm test
+```
+
+Reports and artifacts are written to `test-results/` and `playwright-report/` on the host via volume mounts.
+
+## CI/CD
+
+GitHub Actions runs Playwright tests on every push and pull request to `main`, and can be triggered manually via **Actions → CI → Run workflow**.
+
+### Required repository secrets
+
+Configure these under **Settings → Secrets and variables → Actions**:
+
+| Secret | Description |
+|--------|-------------|
+| `MARCOMBOX_EMAIL` | Login email |
+| `MARCOMBOX_PASSWORD` | Login password |
+| `MARCOMBOX_BASE_URL` | App URL (optional; defaults to QA) |
+| `USER_FOLDER_NAME` | DAM folder name |
+| `TEST_EMAIL` | Inbox for share/guest-upload emails |
+
+On failure, the workflow uploads the HTML report, traces, screenshots, and videos as a downloadable artifact (retained for 14 days).
+
 ## Project Structure
 
 ```
@@ -115,7 +152,6 @@ JUnit XML: `test-results/junit.xml`
 
 ## Possible Improvements
 
-- CI pipeline with GitHub Actions and secrets
 - API-based Yopmail reader for faster email polling
 - Retry wrapper for flaky network operations
 - Visual regression on asset thumbnails

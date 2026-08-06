@@ -8,7 +8,7 @@ export default defineConfig({
   testIgnore: ['**/discover*.spec.ts', '**/cleanup.spec.ts'],
   fullyParallel: true,
   workers: 2,
-  retries: 0,
+  retries: process.env.CI ? 2 : 0,
   timeout: 300_000,
   expect: { timeout: 30_000 },
   reporter: [
