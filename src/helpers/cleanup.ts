@@ -1,6 +1,6 @@
 import { Page } from '@playwright/test';
+import { isAutomationAsset } from './constants';
 import { AssetsPage } from '../pages/AssetsPage';
-import { LoginPage } from '../pages/LoginPage';
 
 export async function cleanupAutomationAssets(
   page: Page,
@@ -12,14 +12,24 @@ export async function cleanupAutomationAssets(
   await assetsPage.openUserFolder(folderName);
 
   for (const id of identifiers) {
-    const card = page.locator('[role="group"]').filter({ hasText: id });
-    if (await card.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await assetsPage.deleteAsset(id);
-    }
+    if (!isAutomationAsset(id)) continue;
+    await assetsPage.deleteAssetIfVisible(id);
   }
 }
 
-export async function ensureLoggedIn(page: Page, email: string, password: string): Promise<void> {
-  if (!page.url().includes('Login')) return;
-  await new LoginPage(page).login(email, password);
+/** Remove leftover automation assets in a folder (prefix-based, non-destructive to manual data). */
+export async function cleanupAutomationAssetsInFolder(
+  page: Page,
+  folderName: string,
+): Promise<void> {
+  const assetsPage = new AssetsPage(page);
+  await assetsPage.navigateToAssets();
+  await assetsPage.openUserFolder(folderName);
+
+  const names = await assetsPage.listAssetNames();
+  for (const name of names) {
+    if (isAutomationAsset(name)) {
+      await assetsPage.deleteAssetIfVisible(name);
+    }
+  }
 }

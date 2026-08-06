@@ -4,6 +4,7 @@ test-results/
 playwright-report/
 blob-report/
 .env
+.auth/
 *.log
 explore-form.png
 explore.js

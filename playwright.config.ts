@@ -3,11 +3,14 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const authFile = '.auth/user.json';
+
 export default defineConfig({
   testDir: './tests',
   testIgnore: ['**/discover*.spec.ts', '**/cleanup.spec.ts'],
+  globalSetup: './global-setup.ts',
   fullyParallel: true,
-  workers: 2,
+  workers: process.env.CI ? 2 : 2,
   retries: process.env.CI ? 2 : 0,
   timeout: 300_000,
   expect: { timeout: 30_000 },
@@ -26,8 +29,20 @@ export default defineConfig({
   },
   projects: [
     {
+      name: 'unauthenticated',
+      testMatch: /auth\/.*\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: { cookies: [], origins: [] },
+      },
+    },
+    {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      testIgnore: /auth\/.*\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: authFile,
+      },
     },
   ],
   outputDir: 'test-results',

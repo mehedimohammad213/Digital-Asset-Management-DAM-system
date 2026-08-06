@@ -16,10 +16,16 @@ test('debug save validation', async ({ page }) => {
   await page.getByRole('button', { name: 'DAM' }).click();
   await page.getByRole('menuitem', { name: 'Assets' }).click();
   await page.waitForSelector('[role="treeitem"]', { timeout: 60_000 });
-  await page.locator('[role="group"]').filter({ hasText: 'mehedi' }).filter({ hasText: 'subfolders' }).dblclick();
+  await page
+    .locator('[role="group"]')
+    .filter({ hasText: 'mehedi' })
+    .filter({ hasText: 'subfolders' })
+    .dblclick();
   await page.waitForTimeout(3000);
   await page.getByRole('button', { name: 'New Item' }).click();
-  await page.locator('input[type="file"]._s_fileUpload').setInputFiles(path.join(__dirname, '../test-data/sample.mp4'));
+  await page
+    .locator('input[type="file"]._s_fileUpload')
+    .setInputFiles(path.join(__dirname, '../test-data/sample.mp4'));
   await page.waitForTimeout(15000);
 
   const dialog = page.getByRole('dialog', { name: 'Upload files' });
@@ -33,14 +39,22 @@ test('debug save validation', async ({ page }) => {
   await page.waitForTimeout(500);
 
   // Check type selected
-  console.log('Type area:', await dialog.locator('p').filter({ hasText: 'Type' }).locator('..').innerText());
+  console.log(
+    'Type area:',
+    await dialog.locator('p').filter({ hasText: 'Type' }).locator('..').innerText(),
+  );
 
   // Try clicking date field and using datepicker
   await tbs.nth(1).click();
   await page.waitForTimeout(500);
   const today = new Date();
   const day = today.getDate();
-  await page.locator('.react-datepicker__day:not(.react-datepicker__day--outside-month)').filter({ hasText: String(day) }).first().click().catch(() => undefined);
+  await page
+    .locator('.react-datepicker__day:not(.react-datepicker__day--outside-month)')
+    .filter({ hasText: String(day) })
+    .first()
+    .click()
+    .catch(() => undefined);
   await page.keyboard.press('Escape');
 
   await tbs.nth(2).fill('Test identity: DEBUG-123');
@@ -63,7 +77,9 @@ test('debug save validation', async ({ page }) => {
     await page.waitForTimeout(5000);
     const body = await page.locator('body').innerText();
     const dialogVisible = await dialog.isVisible().catch(() => false);
-    console.log(`T+${(i+1)*5}s dialog=${dialogVisible}, items=${body.match(/(\d+) items/)?.[0]}, errors=${body.match(/error|required|invalid/gi)}`);
+    console.log(
+      `T+${(i + 1) * 5}s dialog=${dialogVisible}, items=${body.match(/(\d+) items/)?.[0]}, errors=${body.match(/error|required|invalid/gi)}`,
+    );
     if (!dialogVisible) break;
   }
 

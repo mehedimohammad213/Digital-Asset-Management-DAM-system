@@ -14,8 +14,25 @@ export class LoginPage {
   }
 
   async logout(): Promise<void> {
-    await this.page.getByRole('button', { name: /^M$/ }).click();
+    const profileMenu = this.page
+      .getByRole('button')
+      .filter({ has: this.page.locator('span, div').filter({ hasText: /^[A-Z]$/ }) })
+      .first();
+
+    if (await profileMenu.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await profileMenu.click();
+    } else {
+      await this.page
+        .getByRole('button', { name: /^[A-Z]$/ })
+        .first()
+        .click();
+    }
+
     await this.page.getByRole('listitem', { name: 'Log out' }).click();
     await this.page.waitForURL(/Login/);
+  }
+
+  async expectLoginFormVisible(): Promise<void> {
+    await expect(this.page.getByRole('button', { name: 'Next' })).toBeVisible();
   }
 }
