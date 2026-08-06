@@ -77,7 +77,14 @@ Configure these under **Settings → Secrets and variables → Actions**:
 | `USER_FOLDER_NAME` | DAM folder name |
 | `TEST_EMAIL` | Inbox for share/guest-upload emails |
 
-On failure, the workflow uploads the HTML report, traces, screenshots, and videos as a downloadable artifact (retained for 14 days).
+After every CI run (pass or fail), download the **playwright-report** artifact from the workflow run summary:
+
+1. Open **Actions** → select the CI run
+2. Scroll to **Artifacts**
+3. Download **playwright-report** (zip)
+4. Unzip and open `playwright-report/index.html` in a browser
+
+The artifact includes the HTML report, JUnit XML, and failure artifacts (traces, screenshots, videos). Artifacts are retained for 14 days.
 
 ## Project Structure
 
