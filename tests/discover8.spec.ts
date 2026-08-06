@@ -18,11 +18,17 @@ test('discover asset detail and menu', async ({ page }) => {
   await page.getByRole('button', { name: 'DAM' }).click();
   await page.getByRole('menuitem', { name: 'Assets' }).click();
   await page.waitForSelector('[role="treeitem"]', { timeout: 60_000 });
-  await page.locator('[role="group"]').filter({ hasText: 'mehedi' }).filter({ hasText: 'subfolders' }).dblclick();
+  await page
+    .locator('[role="group"]')
+    .filter({ hasText: 'mehedi' })
+    .filter({ hasText: 'subfolders' })
+    .dblclick();
   await page.waitForTimeout(2000);
 
   await page.getByRole('button', { name: 'New Item' }).click();
-  await page.locator('input[type="file"]._s_fileUpload').setInputFiles(path.join(__dirname, '../test-data/sample.mp4'));
+  await page
+    .locator('input[type="file"]._s_fileUpload')
+    .setInputFiles(path.join(__dirname, '../test-data/sample.mp4'));
   await page.waitForTimeout(15000);
 
   const dialog = page.getByRole('dialog', { name: 'Upload files' });
@@ -33,7 +39,11 @@ test('discover asset detail and menu', async ({ page }) => {
   await page.keyboard.press('Enter');
   await tbs.nth(1).click();
   const day = new Date().getDate();
-  await page.locator('.react-datepicker__day:not(.react-datepicker__day--outside-month)').filter({ hasText: String(day) }).first().click();
+  await page
+    .locator('.react-datepicker__day:not(.react-datepicker__day--outside-month)')
+    .filter({ hasText: String(day) })
+    .first()
+    .click();
   await page.keyboard.press('Escape');
   await tbs.nth(2).fill(`Identity: ${testIdentity}`);
   await dialog.locator('span.chakra-checkbox__control').nth(2).click({ force: true });
@@ -51,7 +61,12 @@ test('discover asset detail and menu', async ({ page }) => {
   await card.click();
   await page.waitForTimeout(3000);
   const detail = await page.locator('body').innerText();
-  console.log('Detail relevant:', detail.split('\n').filter(l => /title|id|video|identity|automation|sample|edit|close/i.test(l)));
+  console.log(
+    'Detail relevant:',
+    detail
+      .split('\n')
+      .filter((l) => /title|id|video|identity|automation|sample|edit|close/i.test(l)),
+  );
   await page.screenshot({ path: 'test-results/detail-view.png', fullPage: true });
 
   // Cleanup
@@ -61,7 +76,10 @@ test('discover asset detail and menu', async ({ page }) => {
   console.log('Card buttons:', await btns.count());
 });
 
-async function expectDialogClosed(page: import('@playwright/test').Page, dialog: import('@playwright/test').Locator) {
+async function expectDialogClosed(
+  page: import('@playwright/test').Page,
+  dialog: import('@playwright/test').Locator,
+) {
   for (let i = 0; i < 24; i++) {
     if (!(await dialog.isVisible().catch(() => false))) return;
     await page.waitForTimeout(5000);

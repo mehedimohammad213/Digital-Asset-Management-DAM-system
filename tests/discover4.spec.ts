@@ -20,12 +20,20 @@ test('discover upload in mehedi folder', async ({ page }) => {
   await page.getByRole('menuitem', { name: 'Assets' }).click();
   await page.waitForSelector('[role="treeitem"]', { timeout: 60_000 });
 
-  await page.locator('[role="group"]').filter({ hasText: 'mehedi' }).filter({ hasText: 'subfolders' }).dblclick();
+  await page
+    .locator('[role="group"]')
+    .filter({ hasText: 'mehedi' })
+    .filter({ hasText: 'subfolders' })
+    .dblclick();
   await page.waitForTimeout(3000);
-  await expect(page.getByRole('navigation', { name: 'breadcrumb' }).filter({ hasText: 'mehedi' })).toBeVisible();
+  await expect(
+    page.getByRole('navigation', { name: 'breadcrumb' }).filter({ hasText: 'mehedi' }),
+  ).toBeVisible();
 
   await page.getByRole('button', { name: 'New Item' }).click();
-  await page.locator('input[type="file"]._s_fileUpload').setInputFiles(path.join(__dirname, '../test-data/sample.mp4'));
+  await page
+    .locator('input[type="file"]._s_fileUpload')
+    .setInputFiles(path.join(__dirname, '../test-data/sample.mp4'));
   await page.waitForTimeout(15000);
 
   const dialog = page.getByRole('dialog', { name: 'Upload files' });
@@ -60,13 +68,21 @@ test('discover upload in mehedi folder', async ({ page }) => {
 
   await page.screenshot({ path: 'test-results/after-save-mehedi.png', fullPage: true });
   const body = await page.locator('body').innerText();
-  console.log('Result lines:', body.split('\n').filter(l => /automation|sample|error|processing|video/i.test(l)));
+  console.log(
+    'Result lines:',
+    body.split('\n').filter((l) => /automation|sample|error|processing|video/i.test(l)),
+  );
 
   const asset = page.locator('[role="group"]').filter({ hasText: 'Automation QA Engineer' });
   if (await asset.isVisible({ timeout: 10000 }).catch(() => false)) {
     await asset.click();
     await page.waitForTimeout(3000);
-    console.log('Detail:', (await page.locator('body').innerText()).split('\n').filter(l => /id|title|video|identity/i.test(l)));
+    console.log(
+      'Detail:',
+      (await page.locator('body').innerText())
+        .split('\n')
+        .filter((l) => /id|title|video|identity/i.test(l)),
+    );
     await page.screenshot({ path: 'test-results/detail-mehedi.png', fullPage: true });
   }
 });

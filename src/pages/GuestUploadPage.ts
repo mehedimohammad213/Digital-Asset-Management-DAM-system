@@ -10,19 +10,31 @@ export class GuestUploadPage {
   }
 
   async enterOtp(otp: string): Promise<void> {
-    const otpInput = this.page.locator('input[type="text"], input[type="number"], input[type="tel"], input[placeholder*="OTP"], input[placeholder*="code"]').first();
+    const otpInput = this.page
+      .locator(
+        'input[type="text"], input[type="number"], input[type="tel"], input[placeholder*="OTP"], input[placeholder*="code"]',
+      )
+      .first();
     await expect(otpInput).toBeVisible({ timeout: 30_000 });
     await otpInput.fill(otp);
     await this.page.getByRole('button', { name: /verify/i }).click();
-    await this.page.waitForTimeout(2000);
+    await expect(
+      this.page
+        .locator('input[type="file"], button')
+        .filter({ hasText: /browse/i })
+        .first(),
+    ).toBeVisible({
+      timeout: 30_000,
+    });
   }
 
   async uploadFile(filePath: string): Promise<void> {
     const absolutePath = path.resolve(filePath);
 
-    const browseBtn = this.page.getByRole('button', { name: /Browse Files/i }).or(
-      this.page.getByText('Browse Files'),
-    );
+    const browseBtn = this.page
+      .getByRole('button', { name: /Browse Files/i })
+      .or(this.page.getByText('Browse Files'));
+
     if (await browseBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
       const [fileChooser] = await Promise.all([
         this.page.waitForEvent('filechooser'),

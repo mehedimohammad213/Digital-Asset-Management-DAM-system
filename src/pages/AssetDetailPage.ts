@@ -27,7 +27,6 @@ export class AssetDetailPage {
     await textboxes.nth(0).fill(data.title);
 
     await this.selectComboboxOption(dialog.getByRole('combobox').first(), data.type);
-
     await this.setDateTime(textboxes.nth(1));
 
     await textboxes.nth(2).click();
@@ -39,11 +38,15 @@ export class AssetDetailPage {
       await tagsCombo.click();
       await tagsCombo.fill(tag);
       await this.page.keyboard.press('Enter');
-      await this.page.waitForTimeout(300);
     }
 
     if (data.isAutomatedTestdata) {
-      await dialog.locator('span.chakra-checkbox__control').nth(2).click({ force: true });
+      const checkbox = dialog.getByRole('checkbox', { name: /automated test/i });
+      if (await checkbox.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await checkbox.check();
+      } else {
+        await dialog.locator('span.chakra-checkbox__control').nth(2).click({ force: true });
+      }
     }
 
     await textboxes.nth(3).fill(data.hyperlink);
@@ -51,24 +54,32 @@ export class AssetDetailPage {
 
   private async selectComboboxOption(combobox: Locator, value: string): Promise<void> {
     await combobox.click();
-    await this.page.waitForTimeout(300);
     await combobox.pressSequentially(value, { delay: 50 });
-    await this.page.waitForTimeout(500);
+
     const option = this.page.getByRole('option', { name: new RegExp(`^${value}$`, 'i') });
-    if (await option.first().isVisible({ timeout: 3000 }).catch(() => false)) {
+    if (
+      await option
+        .first()
+        .isVisible({ timeout: 3000 })
+        .catch(() => false)
+    ) {
       await option.first().click();
     } else {
-      await this.page.locator(`text="${value}"`).last().click().catch(async () => {
-        await this.page.keyboard.press('ArrowDown');
-        await this.page.keyboard.press('Enter');
-      });
+      await this.page
+        .locator(`text="${value}"`)
+        .last()
+        .click()
+        .catch(async () => {
+          await this.page.keyboard.press('ArrowDown');
+          await this.page.keyboard.press('Enter');
+        });
     }
+
     await this.page.keyboard.press('Escape');
   }
 
   private async setDateTime(dateField: Locator): Promise<void> {
     await dateField.click();
-    await this.page.waitForTimeout(300);
     const day = new Date().getDate();
     await this.page
       .locator('.react-datepicker__day:not(.react-datepicker__day--outside-month)')
@@ -80,25 +91,34 @@ export class AssetDetailPage {
 
   async save(): Promise<void> {
     const dialog = this.uploadDialog();
-    await expect(dialog.getByText(/upload issue/i)).not.toBeVisible({ timeout: 5000 }).catch(() => undefined);
+    await expect(dialog.getByText(/upload issue/i))
+      .not.toBeVisible({ timeout: 5000 })
+      .catch(() => undefined);
     await dialog.getByRole('button', { name: /save|confirm/i }).click();
-
     await expect(dialog).not.toBeVisible({ timeout: 180_000 });
-    await this.page.waitForTimeout(2000);
   }
 
   async verifyMetadata(data: Partial<AssetMetadata> & { fileName?: string }): Promise<void> {
-    await this.page.getByText(/item id|title|description|sample\.mp4/i).first().waitFor({ timeout: 15_000 });
+    await this.page
+      .getByText(/item id|title|description|sample\.mp4/i)
+      .first()
+      .waitFor({ timeout: 15_000 });
     const bodyText = await this.page.locator('body').innerText();
     expect(bodyText).not.toContain('Upload issue');
 
-    if (data.description) expect(bodyText.toLowerCase()).toContain(data.description.toLowerCase().slice(0, 25));
+    if (data.title) expect(bodyText).toContain(data.title);
+    if (data.description) {
+      expect(bodyText.toLowerCase()).toContain(data.description.toLowerCase().slice(0, 25));
+    }
     if (data.hyperlink) expect(bodyText).toContain(data.hyperlink);
   }
 
   async clickEdit(): Promise<void> {
     await this.page.getByRole('button', { name: /^edit$/i }).click();
-    await expect(this.page.getByRole('button', { name: /cancel edit/i })).toBeVisible({ timeout: 15_000 });
+    await expect(this.page.getByRole('button', { name: /cancel edit/i })).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(this.fieldByLabel('Title')).toBeVisible({ timeout: 15_000 });
   }
 
   async getItemId(): Promise<string> {
@@ -122,21 +142,40 @@ export class AssetDetailPage {
     } else {
       await this.page.keyboard.press('Escape');
     }
-    await this.page.waitForTimeout(1000);
+    await expect(this.page.getByText(/item id/i))
+      .not.toBeVisible({ timeout: 5000 })
+      .catch(() => undefined);
   }
 
-  private fieldByLabel(label: string) {
+  private fieldByLabel(label: string): Locator {
+    const exactLabel = new RegExp(`^${label}$`, 'i');
+
     return this.page
-      .locator('p')
-      .filter({ hasText: new RegExp(`^${label}$`, 'i') })
-      .locator('xpath=..')
-      .getByRole('textbox');
+      .getByRole('textbox', { name: exactLabel })
+      .or(
+        this.page
+          .locator('div')
+          .filter({ has: this.page.locator('p').filter({ hasText: exactLabel }) })
+          .getByRole('textbox')
+          .first(),
+      )
+      .or(
+        this.page
+          .locator('label')
+          .filter({ hasText: exactLabel })
+          .locator('..')
+          .getByRole('textbox')
+          .first(),
+      );
   }
 
   private async setDetailFieldValue(label: string, value: string): Promise<void> {
     const field = this.fieldByLabel(label);
+    await expect(field).toBeVisible({ timeout: 15_000 });
     await field.click();
+    await field.clear();
     await field.fill(value);
+    await expect(field).toHaveValue(value);
   }
 
   async updateTitle(newTitle: string): Promise<void> {
@@ -153,7 +192,9 @@ export class AssetDetailPage {
 
   async saveEdit(): Promise<void> {
     await this.page.getByRole('button', { name: /save|confirm/i }).click();
-    await this.page.waitForTimeout(3000);
+    await expect(this.page.getByRole('button', { name: /cancel edit/i })).not.toBeVisible({
+      timeout: 15_000,
+    });
   }
 }
 

@@ -21,9 +21,21 @@ test('cleanup leftover test assets', async ({ page }) => {
     const text = await groups.nth(i).innerText();
     console.log('Deleting:', text.substring(0, 80));
     await groups.nth(i).hover();
-    await groups.nth(i).locator('button').last().click().catch(() => undefined);
-    const deleteBtn = page.getByRole('menuitem', { name: /delete/i }).or(page.getByText('Delete', { exact: true }));
-    if (await deleteBtn.first().isVisible({ timeout: 2000 }).catch(() => false)) {
+    await groups
+      .nth(i)
+      .locator('button')
+      .last()
+      .click()
+      .catch(() => undefined);
+    const deleteBtn = page
+      .getByRole('menuitem', { name: /delete/i })
+      .or(page.getByText('Delete', { exact: true }));
+    if (
+      await deleteBtn
+        .first()
+        .isVisible({ timeout: 2000 })
+        .catch(() => false)
+    ) {
       await deleteBtn.first().click();
       const confirm = page.getByRole('button', { name: /confirm|yes|delete/i }).last();
       if (await confirm.isVisible({ timeout: 2000 }).catch(() => false)) await confirm.click();

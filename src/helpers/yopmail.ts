@@ -16,7 +16,8 @@ export class YopmailClient {
   /** Poll Yopmail inbox until a matching email arrives after `since`. */
   async waitForEmail(options: {
     subjectContains?: string;
-    bodyContains: string;
+    bodyContains?: string;
+    bodyMatches?: RegExp;
     since: Date;
     timeoutMs?: number;
     pollIntervalMs?: number;
@@ -24,7 +25,7 @@ export class YopmailClient {
     const {
       subjectContains,
       bodyContains,
-      since,
+      bodyMatches,
       timeoutMs = 120_000,
       pollIntervalMs = 5_000,
     } = options;
@@ -38,7 +39,8 @@ export class YopmailClient {
           continue;
         }
         const body = await this.fetchMessageBody(msg.id);
-        if (!body.includes(bodyContains)) continue;
+        if (bodyContains && !body.includes(bodyContains)) continue;
+        if (bodyMatches && !bodyMatches.test(body)) continue;
 
         const linkMatch = body.match(/https?:\/\/[^\s"'<>]+/g);
         const link = linkMatch?.find((url) => url.includes('marcombox') || url.includes('guest'));
@@ -49,7 +51,7 @@ export class YopmailClient {
     }
 
     throw new Error(
-      `Email not found within ${timeoutMs}ms (body must contain "${bodyContains}")`,
+      `Email not found within ${timeoutMs}ms (bodyContains="${bodyContains ?? ''}", bodyMatches=${bodyMatches?.source ?? 'none'})`,
     );
   }
 
@@ -68,7 +70,8 @@ export class YopmailClient {
     const html = await response.text();
 
     const messages: Array<{ id: string; subject: string }> = [];
-    const rowRegex = /class="m"[^>]*onclick="[^"]*\/en\/mail\?[^"]*id=([^&"]+)[^"]*"[^>]*>([^<]+)</gi;
+    const rowRegex =
+      /class="m"[^>]*onclick="[^"]*\/en\/mail\?[^"]*id=([^&"]+)[^"]*"[^>]*>([^<]+)</gi;
     let match: RegExpExecArray | null;
     while ((match = rowRegex.exec(html)) !== null) {
       messages.push({ id: match[1], subject: match[2].trim() });
@@ -106,11 +109,12 @@ export class YopmailBrowserClient {
   }
 
   async waitForEmail(options: {
-    bodyContains: string;
+    bodyContains?: string;
+    bodyMatches?: RegExp;
     since: Date;
     timeoutMs?: number;
   }): Promise<{ body: string; link?: string }> {
-    const { bodyContains, timeoutMs = 120_000 } = options;
+    const { bodyContains, bodyMatches, timeoutMs = 120_000 } = options;
     const deadline = Date.now() + timeoutMs;
 
     while (Date.now() < deadline) {
@@ -126,9 +130,16 @@ export class YopmailBrowserClient {
         await this.page.waitForTimeout(1500);
 
         const mailFrame = this.page.frameLocator('#ifmail');
-        const body = await mailFrame.locator('body').innerText().catch(() => '');
+        const body = await mailFrame
+          .locator('body')
+          .innerText()
+          .catch(() => '');
 
-        if (body.includes(bodyContains)) {
+        const bodyMatchesCriteria =
+          (!bodyContains || body.includes(bodyContains)) &&
+          (!bodyMatches || bodyMatches.test(body));
+
+        if (bodyMatchesCriteria) {
           const linkMatch = body.match(/https?:\/\/[^\s]+/g);
           const link = linkMatch?.find((u) => u.includes('marcombox') || u.includes('guest'));
           return { body, link };
@@ -141,7 +152,9 @@ export class YopmailBrowserClient {
       await this.page.waitForTimeout(5000);
     }
 
-    throw new Error(`Email containing "${bodyContains}" not found within ${timeoutMs}ms`);
+    throw new Error(
+      `Email not found within ${timeoutMs}ms (bodyContains="${bodyContains ?? ''}", bodyMatches=${bodyMatches?.source ?? 'none'})`,
+    );
   }
 
   extractOtp(body: string): string {
