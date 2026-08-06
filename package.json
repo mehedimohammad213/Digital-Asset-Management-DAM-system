@@ -7,7 +7,9 @@
     "test:headed": "playwright test --headed",
     "test:scenario1": "playwright test tests/scenario1-local-upload.spec.ts",
     "test:scenario2": "playwright test tests/scenario2-folder-upload.spec.ts",
-    "report": "playwright show-report"
+    "report": "playwright show-report",
+    "docker:build": "docker compose build test",
+    "docker:test": "docker compose run --rm test"
   },
   "keywords": [],
   "author": "",

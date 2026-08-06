@@ -1,0 +1,15 @@
+services:
+  test:
+    build: .
+    environment:
+      MARCOMBOX_EMAIL: ${MARCOMBOX_EMAIL}
+      MARCOMBOX_PASSWORD: ${MARCOMBOX_PASSWORD}
+      MARCOMBOX_BASE_URL: ${MARCOMBOX_BASE_URL:-https://qatest.marcombox.com}
+      USER_FOLDER_NAME: ${USER_FOLDER_NAME:-mehedi}
+      TEST_EMAIL: ${TEST_EMAIL}
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - ./test-results:/app/test-results
+      - ./playwright-report:/app/playwright-report
