@@ -4,16 +4,7 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: [
-      'dist/**',
-      'playwright-report/**',
-      'test-results/**',
-      'node_modules/**',
-      'explore.js',
-      'explore.ts',
-      'tests/discover*.spec.ts',
-      'tests/cleanup.spec.ts',
-    ],
+    ignores: ['dist/**', 'playwright-report/**', 'test-results/**', 'node_modules/**'],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,

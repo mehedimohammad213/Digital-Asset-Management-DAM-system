@@ -7,8 +7,7 @@ const authFile = '.auth/user.json';
 
 export default defineConfig({
   testDir: './tests',
-  testIgnore: ['**/discover*.spec.ts', '**/cleanup.spec.ts'],
-  globalSetup: './global-setup.ts',
+  globalSetup: './marcombox.global-setup.ts',
   fullyParallel: true,
   workers: process.env.CI ? 2 : 2,
   retries: process.env.CI ? 2 : 0,
@@ -29,16 +28,16 @@ export default defineConfig({
   },
   projects: [
     {
-      name: 'unauthenticated',
-      testMatch: /auth\/.*\.spec\.ts/,
+      name: 'marcombox-unauthenticated',
+      testMatch: /marcombox-smoke\/marcombox\.login\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
         storageState: { cookies: [], origins: [] },
       },
     },
     {
-      name: 'chromium',
-      testIgnore: /auth\/.*\.spec\.ts/,
+      name: 'marcombox-authenticated',
+      testIgnore: /marcombox-smoke\/marcombox\.login\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
         storageState: authFile,

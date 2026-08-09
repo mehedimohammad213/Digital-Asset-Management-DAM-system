@@ -10,8 +10,16 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "outDir": "dist",
-    "rootDir": "."
+    "rootDir": ".",
+    "baseUrl": ".",
+    "paths": {
+      "@marcombox/*": ["marcombox-dam/*"]
+    }
   },
-  "include": ["src/**/*", "tests/**/*", "playwright.config.ts", "global-setup.ts"],
-  "exclude": ["tests/discover*.spec.ts", "tests/cleanup.spec.ts"]
+  "include": [
+    "marcombox-dam/**/*",
+    "tests/**/*",
+    "playwright.config.ts",
+    "marcombox.global-setup.ts"
+  ]
 }
