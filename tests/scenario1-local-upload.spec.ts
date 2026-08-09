@@ -4,13 +4,14 @@ import { test, expect } from '../src/fixtures/test.fixture';
 import { uniqueTestFile } from '../src/pages/AssetDetailPage';
 import { cleanupAutomationAssetsInFolder } from '../src/helpers/cleanup';
 import { waitForEmailWithFallback } from '../src/helpers/email';
+import { StepRunner } from '../src/helpers/stepRunner';
 import { uniqueTestId, SCENARIO1_PREFIX } from '../src/helpers/testData';
 import { YopmailBrowserClient } from '../src/helpers/yopmail';
 
-test.describe('Scenario 1: Local Upload and Text Search @regression', () => {
+test.describe('Scenario 1: Local Upload and Text Search @smoke @regression', () => {
   test.describe.configure({ mode: 'serial' });
 
-  test('full asset lifecycle with local mp4 upload @regression', async ({
+  test('full asset lifecycle with local mp4 upload @smoke @regression', async ({
     page,
     context,
     env,
@@ -19,6 +20,8 @@ test.describe('Scenario 1: Local Upload and Text Search @regression', () => {
     loginPage,
     yopmailApi,
   }) => {
+    const steps = new StepRunner(page);
+
     const testIdentity = uniqueTestId(SCENARIO1_PREFIX);
     const initialTitle = 'Automation QA Engineer';
     const updatedTitle = 'Automation QA Engineer - Updated';
@@ -26,22 +29,25 @@ test.describe('Scenario 1: Local Upload and Text Search @regression', () => {
     const updatedDescription = `Updated description. Identity: ${testIdentity}`;
     const sourceVideo = path.join(__dirname, '../test-data/sample.mp4');
     const uniqueVideo = uniqueTestFile(sourceVideo, 'automation-video');
+    const uploadedFileName = path.basename(uniqueVideo);
+    const assetType = 'Video';
 
     let itemId = '';
-    let shareTimestamp: Date;
+    let shareTimestamp: Date | undefined;
 
     try {
-      await test.step('Navigate to user folder and remove leftover automation assets', async () => {
+      await steps.run('Step 1: Navigate to user folder and cleanup', async () => {
         await assetsPage.navigateToAssets();
+        await assetsPage.openUserFolder(env.folderName);
         await cleanupAutomationAssetsInFolder(page, env.folderName);
       });
 
-      await test.step('Upload mp4 and create asset with metadata', async () => {
+      await steps.run('Step 2-4: Upload mp4, fill metadata, confirm and wait', async () => {
         await assetsPage.clickNewItem();
         await assetsPage.uploadFileViaDragDrop(uniqueVideo);
         await assetDetailPage.fillMetadata({
           title: initialTitle,
-          type: 'Video',
+          type: assetType,
           dateTime: '',
           description: initialDescription,
           tags: ['automation', 'playwright'],
@@ -50,19 +56,26 @@ test.describe('Scenario 1: Local Upload and Text Search @regression', () => {
         });
         await assetDetailPage.save();
         await assetsPage.openUserFolder(env.folderName);
+        await expect(page.getByText(/[1-9]\d* items/i).first()).toBeVisible({ timeout: 60_000 });
       });
 
-      await test.step('Open asset and verify file name and metadata', async () => {
-        await assetsPage.openAssetByDetailMatch([testIdentity, initialTitle]);
+      await steps.run('Step 5: Open asset and verify file name and metadata', async () => {
+        await assetsPage.openAssetByTitle(initialTitle);
         await assetDetailPage.verifyMetadata({
           title: initialTitle,
+          type: assetType,
+          description: initialDescription,
+          tags: ['automation', 'playwright'],
+          isAutomatedTestdata: true,
           hyperlink: 'https://qatest.marcombox.com/',
+          fileName: uploadedFileName,
         });
-        const detailText = await page.locator('body').innerText();
-        expect(detailText.toLowerCase()).toMatch(/sample\.mp4|automation|item id/);
       });
 
-      await test.step('Edit asset and confirm changes', async () => {
+      await steps.run('Step 6-7: Edit asset, confirm changes, capture item ID', async () => {
+        const typeBeforeEdit = await assetDetailPage.getAssetType();
+        expect(typeBeforeEdit.toLowerCase()).toBe(assetType.toLowerCase());
+
         await assetDetailPage.clickEdit();
         await assetDetailPage.updateTitle(updatedTitle);
         await assetDetailPage.updateDateTime();
@@ -73,49 +86,52 @@ test.describe('Scenario 1: Local Upload and Text Search @regression', () => {
           title: updatedTitle,
           description: updatedDescription,
         });
+
+        const typeAfterEdit = await assetDetailPage.getAssetType();
+        expect(typeAfterEdit.toLowerCase()).toBe(assetType.toLowerCase());
+
         itemId = await assetDetailPage.getItemId();
+        expect(itemId).toBeTruthy();
+      });
+
+      await steps.run('Step 8: Close asset and confirm via top text search', async () => {
+        await assetDetailPage.close();
+        await assetsPage.openAssetFromSearch(testIdentity);
+        const bodyText = await page.locator('body').innerText();
+        expect(bodyText).toContain(testIdentity);
+        expect(bodyText).toContain(itemId);
         await assetDetailPage.close();
       });
 
-      await test.step('Search asset by title and confirm identity and item ID', async () => {
-        await assetsPage.openAssetByDetailMatch([testIdentity, updatedTitle, itemId]);
-        expect(await page.locator('body').innerText()).toContain(testIdentity);
-        await assetDetailPage.close();
-      });
-
-      await test.step('Download asset from ellipsis menu', async () => {
-        const filename = await assetsPage.downloadAssetByDetailMatch([
-          updatedTitle,
-          itemId,
-          testIdentity,
-        ]);
+      await steps.run('Step 9: Download asset from ellipsis menu', async () => {
+        const filename = await assetsPage.downloadAssetFromMenu(updatedTitle);
         expect(filename).toBeTruthy();
       });
 
-      await test.step('Share asset via email', async () => {
+      await steps.run('Step 10: Share asset via email', async () => {
         shareTimestamp = new Date();
-        await assetsPage.shareAssetByDetailMatch(
-          [updatedTitle, itemId, testIdentity],
-          env.testEmail,
-        );
+        await assetsPage.shareAssetViaEmailLink(updatedTitle, env.testEmail);
       });
 
-      await test.step('Verify share email in inbox', async () => {
+      await steps.run('Step 11: Verify share email in inbox', async () => {
         const yopmailPage = await context.newPage();
         const browserClient = new YopmailBrowserClient(yopmailPage, env.testEmail);
         const mail = await waitForEmailWithFallback(yopmailApi, browserClient, {
           bodyContains: updatedTitle,
-          since: shareTimestamp,
+          since: shareTimestamp ?? new Date(0),
           timeoutMs: 120_000,
         });
         expect(mail.body).toContain(updatedTitle);
         await yopmailPage.close();
       });
 
-      await test.step('Delete asset and logout', async () => {
-        await assetsPage.deleteAssetByDetailMatch([updatedTitle, itemId, testIdentity]);
+      await steps.run('Step 12: Delete asset, confirm removal, and logout', async () => {
+        await assetsPage.deleteAssetByTitle(updatedTitle);
+        await assetsPage.confirmSearchHasNoResults(testIdentity);
         await loginPage.logout();
       });
+
+      steps.assertAllPassed();
     } finally {
       if (fs.existsSync(uniqueVideo)) fs.unlinkSync(uniqueVideo);
     }

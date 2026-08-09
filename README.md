@@ -129,13 +129,20 @@ After every CI run, download the **playwright-report** artifact from the workflo
 
 ## Scenarios
 
-### Scenario 1: Local Upload and Text Search (`.mp4`) — `@regression`
+### Scenario 1: Local Upload and Text Search (`.mp4`) — `@smoke @regression`
 
-1. Navigate to user folder (auth via saved session)
-2. Prefix-based cleanup of leftover automation assets
-3. Upload unique-named MP4 with full metadata
-4. Edit title, date, description → search → download → share → verify email
-5. Delete asset and logout
+1. Sign in → DAM > Assets → open your user folder
+2. New Item → upload local `.mp4`
+3. Create asset with title, type Video, date/time, description (unique test identity), tags, automated testdata flag, and hyperlink
+4. Save and wait for upload/processing
+5. Open asset → verify file name and all metadata values
+6. Edit title, date/time, and description → Save
+7. Confirm changes saved, Type unchanged, copy item ID
+8. Close detail panel → top text search by unique identity → confirm identity and item ID
+9. Hover thumbnail → ellipsis → Download → confirm file downloaded
+10. Share → enter test email → Send
+11. Confirm new share email in inbox (timestamp-filtered, not old/Scenario 2 mail)
+12. Delete created asset → confirm gone → logout
 
 ### Scenario 2: Folder Upload and Filter (`.jpg`) — `@regression`
 

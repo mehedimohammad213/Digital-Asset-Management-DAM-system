@@ -1,4 +1,4 @@
-import { Locator, Page, expect } from '@playwright/test';
+import { Page, expect } from '@playwright/test';
 import path from 'path';
 
 export class AssetsPage {
@@ -8,46 +8,40 @@ export class AssetsPage {
     await expect(this.page.getByRole('button', { name: 'DAM' })).toBeVisible({ timeout: 60_000 });
     await this.page.getByRole('button', { name: 'DAM' }).click();
     await this.page.getByRole('menuitem', { name: 'Assets' }).click();
-    await this.page.waitForSelector('[role="treeitem"]', { timeout: 60_000 });
+    await this.page.waitForSelector('#scrollableDiv', { timeout: 60_000 });
   }
 
   async openUserFolder(folderName: string): Promise<void> {
-    const newItemButton = this.page.getByRole('button', { name: 'New Item' });
-    if (await newItemButton.isVisible({ timeout: 3000 }).catch(() => false)) {
-      return;
-    }
+    await this.page.locator('div').filter({ hasText: /^Folder$/ }).nth(3).click();
 
-    const folderCard = this.page
-      .locator('[role="group"]')
-      .filter({ hasText: folderName })
-      .filter({ hasText: /files|subfolders/i })
-      .first();
-
-    if (await folderCard.isVisible({ timeout: 10_000 }).catch(() => false)) {
-      await folderCard.dblclick();
+    const folderLabel = this.page.locator('#scrollableDiv').getByText(folderName, { exact: true });
+    if (await folderLabel.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await folderLabel.click();
     } else {
-      await this.page
-        .locator('[role="treeitem"]')
-        .filter({ hasText: folderName })
-        .first()
-        .dblclick();
+      await this.page.locator('#scrollableDiv').getByRole('img').click();
     }
 
-    await expect(newItemButton).toBeVisible({ timeout: 30_000 });
+    await expect(this.page.getByRole('button', { name: 'New Item' })).toBeVisible({
+      timeout: 30_000,
+    });
   }
 
   async clickNewItem(): Promise<void> {
     await this.page.getByRole('button', { name: 'New Item' }).click();
-    await expect(this.page.getByRole('dialog', { name: 'Upload files' })).toBeVisible();
+    await expect(this.page.getByRole('dialog', { name: 'Upload files' })).toBeVisible({
+      timeout: 15_000,
+    });
   }
 
   async uploadFile(filePath: string): Promise<void> {
     const absolutePath = path.resolve(filePath);
     const dialog = this.page.getByRole('dialog', { name: 'Upload files' });
-    await this.page.locator('input[type="file"]').first().setInputFiles(absolutePath);
-    await expect(dialog.getByText(/sample\.|uploading|processing|mp4|ready/i).first()).toBeVisible({
+    await dialog.getByRole('img').first().click();
+    await dialog.locator('input[type="file"]').first().setInputFiles(absolutePath);
+    await expect(dialog.getByText(/mp4|uploading|processing|ready/i).first()).toBeVisible({
       timeout: 60_000,
     });
+    await this.page.waitForTimeout(15_000);
   }
 
   async uploadFileViaDragDrop(filePath: string): Promise<void> {
@@ -72,7 +66,6 @@ export class AssetsPage {
     }
   }
 
-  /** Poll search until the index returns results (video metadata indexing can lag). */
   async searchUntilResults(query: string, timeoutMs = 180_000): Promise<void> {
     const deadline = Date.now() + timeoutMs;
 
@@ -89,12 +82,89 @@ export class AssetsPage {
     throw new Error(`Search returned no results for "${query}" within ${timeoutMs}ms`);
   }
 
-  getAssetCard(identifier: string): Locator {
-    return this.page.locator('[role="group"]').filter({ hasText: identifier }).first();
+  async openAssetFromSearch(query: string, timeoutMs = 180_000): Promise<void> {
+    await this.searchUntilResults(query, timeoutMs);
+    await this.openAssetByTitle(query);
   }
 
-  async waitForAsset(identifier: string, timeoutMs = 120_000): Promise<void> {
-    await expect(this.getAssetCard(identifier)).toBeVisible({ timeout: timeoutMs });
+  async openAssetByTitle(title: string): Promise<void> {
+    await this.page.locator('div').filter({ hasText: new RegExp(`^${title}$`) }).nth(2).click();
+    await expect(this.page.getByRole('paragraph').filter({ hasText: 'Title' })).toBeVisible({
+      timeout: 15_000,
+    });
+  }
+
+  async selectAssetByTitle(title: string): Promise<void> {
+    await this.openAssetByTitle(title);
+    await this.closeDetailIfOpen();
+    await this.page.locator('.chakra-checkbox__control').first().click();
+    await this.page.locator('.css-17zthjx').click();
+  }
+
+  private async closeDetailIfOpen(): Promise<void> {
+    const closeBtn = this.page.getByRole('button', { name: 'close' }).nth(1);
+    if (await closeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await closeBtn.click();
+    }
+  }
+
+  async downloadSelectedAsset(): Promise<string> {
+    await this.page.locator('.chakra-checkbox__control').first().click();
+    await this.page.locator('.css-17zthjx').click();
+
+    const downloadPromise = this.page.waitForEvent('download', { timeout: 60_000 });
+    await this.page.getByRole('button', { name: 'download' }).click();
+    const download = await downloadPromise;
+    return download.suggestedFilename();
+  }
+
+  async downloadAssetFromMenu(title: string): Promise<string> {
+    await this.selectAssetRow(title);
+    const downloadPromise = this.page.waitForEvent('download', { timeout: 60_000 });
+    await this.openAssetMenu();
+    await this.page.getByRole('menuitem', { name: 'Download' }).click();
+    const download = await downloadPromise;
+    return download.suggestedFilename();
+  }
+
+  async shareAssetViaEmailLink(title: string, email: string): Promise<void> {
+    await this.selectAssetRow(title);
+    await this.openAssetMenu();
+    await this.page.getByRole('menuitem', { name: 'Share' }).click();
+    await this.page.locator('.mb-tag-field__input-container').click();
+    await this.page.locator('[id^="react-select-"][id$="-input"]').fill(email);
+    await this.page.locator('[id^="react-select-"][id$="-input"]').press('Enter');
+    await this.page.getByRole('button', { name: 'Email Link' }).click();
+  }
+
+  async deleteSelectedAsset(): Promise<void> {
+    await this.page.locator('.chakra-checkbox__control').first().click();
+    await this.page.getByRole('button', { name: 'delete' }).click();
+    await this.page.getByRole('button', { name: 'Confirm' }).click();
+  }
+
+  async deleteAssetByTitle(title: string): Promise<void> {
+    await this.selectAssetRow(title);
+    await this.page.getByRole('button', { name: 'delete' }).click();
+    await this.page.getByRole('button', { name: 'Confirm' }).click();
+    await expect(
+      this.page.locator('div').filter({ hasText: new RegExp(`^${title}$`) }),
+    ).not.toBeVisible({ timeout: 15_000 });
+  }
+
+  private async selectAssetRow(title: string): Promise<void> {
+    await this.closeDetailIfOpen();
+    await this.page.locator('.chakra-checkbox__control').first().click();
+    await this.page.locator('div').filter({ hasText: new RegExp(`^${title}$`) }).nth(2).click();
+  }
+
+  private async openAssetMenu(): Promise<void> {
+    await this.page.locator('[id^="menu-button-"]').last().click();
+  }
+
+  async confirmSearchHasNoResults(query: string): Promise<void> {
+    await this.searchAsset(query);
+    await expect(this.page.getByText(/no items found/i).first()).toBeVisible({ timeout: 30_000 });
   }
 
   async listAssetNames(): Promise<string[]> {
@@ -110,183 +180,21 @@ export class AssetsPage {
     return names;
   }
 
-  /** Locate asset card by opening detail panels until a matcher hits (search index may lag). */
-  async findAssetCardByDetailMatch(matchers: string[]): Promise<Locator> {
-    await this.searchAsset('');
-
-    const cards = this.page.locator('[role="group"]').filter({ hasNotText: 'subfolders' });
-    const count = await cards.count();
-
-    for (let i = count - 1; i >= 0; i--) {
-      const card = cards.nth(i);
-      await card.click();
-      const body = await this.page.locator('body').innerText();
-
-      if (matchers.some((matcher) => body.includes(matcher))) {
-        await this.page.keyboard.press('Escape');
-        await expect(this.page.getByText(/item id/i))
-          .not.toBeVisible({ timeout: 5000 })
-          .catch(() => undefined);
-        return card;
-      }
-
-      await this.page.keyboard.press('Escape');
+  async deleteAssetIfVisible(identifier: string): Promise<void> {
+    const card = this.page.locator('div').filter({ hasText: identifier }).first();
+    if (await card.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await this.deleteAssetByTitle(identifier);
     }
-
-    throw new Error(`Asset card not found matching: ${matchers.join(', ')}`);
-  }
-
-  async openAsset(...identifiers: string[]): Promise<void> {
-    for (const id of identifiers) {
-      const card = this.getAssetCard(id);
-      if (await card.isVisible({ timeout: 10_000 }).catch(() => false)) {
-        await card.click();
-        await expect(this.page.getByText(/item id|title|description/i).first()).toBeVisible({
-          timeout: 15_000,
-        });
-        return;
-      }
-    }
-
-    throw new Error(`Asset not found for identifiers: ${identifiers.join(', ')}`);
-  }
-
-  /** Open asset by scanning cards and matching detail-panel identity (search index may lag). */
-  async openAssetByDetailMatch(matchers: string[], timeoutMs = 120_000): Promise<void> {
-    const deadline = Date.now() + timeoutMs;
-
-    while (Date.now() < deadline) {
-      try {
-        const card = await this.findAssetCardByDetailMatch(matchers);
-        await card.click();
-        await expect(this.page.getByText(/item id|title|description/i).first()).toBeVisible({
-          timeout: 15_000,
-        });
-        return;
-      } catch {
-        await this.page.waitForTimeout(5000);
-      }
-    }
-
-    throw new Error(`Asset not found matching: ${matchers.join(', ')}`);
-  }
-
-  async downloadAssetByDetailMatch(matchers: string[]): Promise<string> {
-    const card = await this.findAssetCardByDetailMatch(matchers);
-    const downloadPromise = this.page.waitForEvent('download', { timeout: 60_000 });
-    await card.hover();
-    await card.locator('button').last().click();
-    await this.page
-      .getByRole('menuitem', { name: /download/i })
-      .or(this.page.getByText('Download', { exact: true }))
-      .first()
-      .click();
-    const download = await downloadPromise;
-    return download.suggestedFilename();
-  }
-
-  async shareAssetByDetailMatch(matchers: string[], email: string): Promise<void> {
-    const card = await this.findAssetCardByDetailMatch(matchers);
-    await card.hover();
-    await card.locator('button').last().click();
-    await this.page
-      .getByRole('menuitem', { name: /share/i })
-      .or(this.page.getByText('Share', { exact: true }))
-      .first()
-      .click();
-
-    const dialog = this.page.getByRole('dialog').last();
-    await expect(dialog).toBeVisible({ timeout: 15_000 });
-    await dialog.locator('input[type="email"], input[type="text"]').first().fill(email);
-    await dialog.getByRole('button', { name: /send/i }).click();
-    await expect(dialog)
-      .not.toBeVisible({ timeout: 15_000 })
-      .catch(() => undefined);
-  }
-
-  async deleteAssetByDetailMatch(matchers: string[]): Promise<void> {
-    const card = await this.findAssetCardByDetailMatch(matchers);
-    await card.hover();
-    await card.locator('button').last().click();
-    await this.page
-      .getByRole('menuitem', { name: /delete/i })
-      .or(this.page.getByText('Delete', { exact: true }))
-      .first()
-      .click();
-
-    const confirmBtn = this.page.getByRole('button', { name: /confirm|yes|delete/i }).last();
-    if (await confirmBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await confirmBtn.click();
-    }
-
-    await expect(card).not.toBeVisible({ timeout: 15_000 });
-  }
-
-  async hoverAsset(identifier: string): Promise<void> {
-    await this.getAssetCard(identifier).hover();
-  }
-
-  async openAssetContextMenu(identifier: string): Promise<void> {
-    await this.hoverAsset(identifier);
-    const card = this.getAssetCard(identifier);
-    await card.locator('button').last().click();
-    await expect(this.page.getByRole('menuitem').first()).toBeVisible({ timeout: 5000 });
-  }
-
-  async downloadAsset(identifier: string): Promise<string> {
-    const downloadPromise = this.page.waitForEvent('download', { timeout: 60_000 });
-    await this.openAssetContextMenu(identifier);
-    await this.page
-      .getByRole('menuitem', { name: /download/i })
-      .or(this.page.getByText('Download', { exact: true }))
-      .first()
-      .click();
-    const download = await downloadPromise;
-    return download.suggestedFilename();
-  }
-
-  async shareAsset(identifier: string, email: string): Promise<void> {
-    await this.openAssetContextMenu(identifier);
-    await this.page
-      .getByRole('menuitem', { name: /share/i })
-      .or(this.page.getByText('Share', { exact: true }))
-      .first()
-      .click();
-
-    const dialog = this.page.getByRole('dialog').last();
-    await expect(dialog).toBeVisible({ timeout: 15_000 });
-    await dialog.locator('input[type="email"], input[type="text"]').first().fill(email);
-    await dialog.getByRole('button', { name: /send/i }).click();
-    await expect(dialog)
-      .not.toBeVisible({ timeout: 15_000 })
-      .catch(() => undefined);
   }
 
   async deleteAsset(identifier: string): Promise<void> {
-    await this.openAssetContextMenu(identifier);
-    await this.page
-      .getByRole('menuitem', { name: /delete/i })
-      .or(this.page.getByText('Delete', { exact: true }))
-      .first()
-      .click();
-
-    const confirmBtn = this.page.getByRole('button', { name: /confirm|yes|delete/i }).last();
-    if (await confirmBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await confirmBtn.click();
-    }
-
-    await expect(this.getAssetCard(identifier)).not.toBeVisible({ timeout: 15_000 });
-  }
-
-  async deleteAssetIfVisible(identifier: string): Promise<void> {
-    const card = this.getAssetCard(identifier);
-    if (await card.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await this.deleteAsset(identifier);
-    }
+    await this.deleteAssetByTitle(identifier);
   }
 
   async confirmAssetNotVisible(identifier: string): Promise<void> {
-    await expect(this.getAssetCard(identifier)).not.toBeVisible({ timeout: 15_000 });
+    await expect(this.page.locator('div').filter({ hasText: identifier }).first()).not.toBeVisible({
+      timeout: 15_000,
+    });
   }
 
   async enableEditMode(): Promise<void> {

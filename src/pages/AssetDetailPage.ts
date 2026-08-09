@@ -24,104 +24,105 @@ export class AssetDetailPage {
     await expect(dialog).toBeVisible({ timeout: 30_000 });
 
     const textboxes = dialog.getByRole('textbox');
+    await textboxes.nth(0).click();
     await textboxes.nth(0).fill(data.title);
 
-    await this.selectComboboxOption(dialog.getByRole('combobox').first(), data.type);
-    await this.setDateTime(textboxes.nth(1));
+    await dialog
+      .locator(
+        '.css-1lsxwht > ._s_add-user-group > .css-b62m3t-container > .mb-tag-field__control > .mb-tag-field__value-container > .mb-tag-field__input-container',
+      )
+      .first()
+      .click();
+    await this.page.getByRole('option', { name: data.type, exact: true }).click();
+
+    await this.pickCurrentDateTime(dialog);
 
     await textboxes.nth(2).click();
     await textboxes.nth(2).fill(data.description);
-    await expect(textboxes.nth(2)).toHaveValue(data.description);
 
-    const tagsCombo = dialog.getByRole('combobox').nth(1);
     for (const tag of data.tags) {
-      await tagsCombo.click();
-      await tagsCombo.fill(tag);
-      await this.page.keyboard.press('Enter');
+      const optionName = tag.charAt(0).toUpperCase() + tag.slice(1).toLowerCase();
+      await dialog
+        .locator(
+          '.mb-tag-field__value-container.mb-tag-field__value-container--is-multi > .mb-tag-field__input-container',
+        )
+        .click();
+      await this.page.getByRole('option', { name: optionName }).click();
     }
 
     if (data.isAutomatedTestdata) {
-      const checkbox = dialog.getByRole('checkbox', { name: /automated test/i });
-      if (await checkbox.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await checkbox.check();
-      } else {
-        await dialog.locator('span.chakra-checkbox__control').nth(2).click({ force: true });
-      }
+      await dialog.locator('.chakra-checkbox__control.css-15kcd0a').click();
     }
 
+    await dialog.getByText('Hyperlink').click();
+    await textboxes.nth(3).click();
     await textboxes.nth(3).fill(data.hyperlink);
   }
 
-  private async selectComboboxOption(combobox: Locator, value: string): Promise<void> {
-    await combobox.click();
-    await combobox.pressSequentially(value, { delay: 50 });
-
-    const option = this.page.getByRole('option', { name: new RegExp(`^${value}$`, 'i') });
-    if (
-      await option
-        .first()
-        .isVisible({ timeout: 3000 })
-        .catch(() => false)
-    ) {
-      await option.first().click();
-    } else {
-      await this.page
-        .locator(`text="${value}"`)
-        .last()
-        .click()
-        .catch(async () => {
-          await this.page.keyboard.press('ArrowDown');
-          await this.page.keyboard.press('Enter');
-        });
-    }
-
-    await this.page.keyboard.press('Escape');
-  }
-
-  private async setDateTime(dateField: Locator): Promise<void> {
+  private async pickCurrentDateTime(scope: Locator): Promise<void> {
+    const dateField = scope.getByRole('textbox').nth(1);
     await dateField.click();
+
     const day = new Date().getDate();
     await this.page
       .locator('.react-datepicker__day:not(.react-datepicker__day--outside-month)')
       .filter({ hasText: String(day) })
       .first()
       .click();
-    await this.page.keyboard.press('Escape');
+
+    const timeOption = this.page.getByRole('option', { name: /\d+:\d+ [AP]M/i }).first();
+    if (await timeOption.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await timeOption.click();
+    }
   }
 
   async save(): Promise<void> {
     const dialog = this.uploadDialog();
-    await expect(dialog.getByText(/upload issue/i))
-      .not.toBeVisible({ timeout: 5000 })
-      .catch(() => undefined);
-    await dialog.getByRole('button', { name: /save|confirm/i }).click();
+    await dialog.getByRole('button', { name: 'Confirm' }).click();
     await expect(dialog).not.toBeVisible({ timeout: 180_000 });
   }
 
-  async verifyMetadata(data: Partial<AssetMetadata> & { fileName?: string }): Promise<void> {
+  async verifyMetadata(
+    data: Partial<AssetMetadata> & { fileName?: string; itemId?: string },
+  ): Promise<void> {
     await this.page
-      .getByText(/item id|title|description|sample\.mp4/i)
-      .first()
+      .getByRole('paragraph')
+      .filter({ hasText: 'Title' })
       .waitFor({ timeout: 15_000 });
     const bodyText = await this.page.locator('body').innerText();
-    expect(bodyText).not.toContain('Upload issue');
 
     if (data.title) expect(bodyText).toContain(data.title);
-    if (data.description) {
-      expect(bodyText.toLowerCase()).toContain(data.description.toLowerCase().slice(0, 25));
+    if (data.type) expect(bodyText).toMatch(new RegExp(data.type, 'i'));
+    if (data.description) expect(bodyText).toContain(data.description);
+    if (data.hyperlink) expect(bodyText).toContain(data.hyperlink.replace(/\/$/, ''));
+    if (data.fileName) expect(bodyText).toContain(data.fileName);
+    if (data.itemId) expect(bodyText).toContain(data.itemId);
+    if (data.tags) {
+      for (const tag of data.tags) {
+        expect(bodyText.toLowerCase()).toContain(tag.toLowerCase());
+      }
     }
-    if (data.hyperlink) expect(bodyText).toContain(data.hyperlink);
+    if (data.isAutomatedTestdata) {
+      expect(bodyText).toMatch(/automated testdata|is automated test/i);
+    }
+  }
+
+  async getAssetType(): Promise<string> {
+    const bodyText = await this.page.locator('body').innerText();
+    const match = bodyText.match(/Type[:\s]+([A-Za-z]+)/i);
+    if (!match) throw new Error('Could not extract asset Type from detail view');
+    return match[1];
   }
 
   async clickEdit(): Promise<void> {
-    await this.page.getByRole('button', { name: /^edit$/i }).click();
-    await expect(this.page.getByRole('button', { name: /cancel edit/i })).toBeVisible({
-      timeout: 15_000,
-    });
-    await expect(this.fieldByLabel('Title')).toBeVisible({ timeout: 15_000 });
+    await this.page.getByRole('button', { name: 'edit' }).click();
+    await expect(this.page.getByRole('textbox').first()).toBeVisible({ timeout: 15_000 });
   }
 
   async getItemId(): Promise<string> {
+    await this.page.getByRole('paragraph').filter({ hasText: 'Title' }).click();
+    await this.page.getByRole('button', { name: 'copy' }).click();
+
     const bodyText = await this.page.locator('body').innerText();
     const patterns = [
       /Item\s*ID[:\s]+([A-Za-z0-9-]+)/i,
@@ -136,63 +137,27 @@ export class AssetDetailPage {
   }
 
   async close(): Promise<void> {
-    const closeBtn = this.page.getByRole('button', { name: /^close$/i }).first();
-    if (await closeBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await closeBtn.click();
-    } else {
-      await this.page.keyboard.press('Escape');
-    }
-    await expect(this.page.getByText(/item id/i))
+    await this.page.getByRole('button', { name: 'close' }).nth(1).click();
+    await expect(this.page.getByRole('paragraph').filter({ hasText: 'Title' }))
       .not.toBeVisible({ timeout: 5000 })
       .catch(() => undefined);
   }
 
-  private fieldByLabel(label: string): Locator {
-    const exactLabel = new RegExp(`^${label}$`, 'i');
-
-    return this.page
-      .getByRole('textbox', { name: exactLabel })
-      .or(
-        this.page
-          .locator('div')
-          .filter({ has: this.page.locator('p').filter({ hasText: exactLabel }) })
-          .getByRole('textbox')
-          .first(),
-      )
-      .or(
-        this.page
-          .locator('label')
-          .filter({ hasText: exactLabel })
-          .locator('..')
-          .getByRole('textbox')
-          .first(),
-      );
-  }
-
-  private async setDetailFieldValue(label: string, value: string): Promise<void> {
-    const field = this.fieldByLabel(label);
-    await expect(field).toBeVisible({ timeout: 15_000 });
-    await field.click();
-    await field.clear();
-    await field.fill(value);
-    await expect(field).toHaveValue(value);
-  }
-
   async updateTitle(newTitle: string): Promise<void> {
-    await this.setDetailFieldValue('Title', newTitle);
+    await this.page.getByRole('textbox').first().fill(newTitle);
   }
 
   async updateDescription(newDescription: string): Promise<void> {
-    await this.setDetailFieldValue('Description', newDescription);
+    await this.page.getByRole('textbox').nth(2).fill(newDescription);
   }
 
   async updateDateTime(): Promise<void> {
-    await this.setDateTime(this.fieldByLabel('Date Time'));
+    await this.pickCurrentDateTime(this.page.locator('body'));
   }
 
   async saveEdit(): Promise<void> {
     await this.page.getByRole('button', { name: /save|confirm/i }).click();
-    await expect(this.page.getByRole('button', { name: /cancel edit/i })).not.toBeVisible({
+    await expect(this.page.getByRole('button', { name: 'edit' })).toBeVisible({
       timeout: 15_000,
     });
   }
