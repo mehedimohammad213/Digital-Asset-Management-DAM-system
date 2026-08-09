@@ -4,7 +4,7 @@ import { test, expect } from '@src/fixtures/base.fixture';
 import { uniqueTestFile } from '@src/pages/asset-detail.page';
 import { extractOtpFromEmailBody, waitForEmailWithFallback } from '@src/support/email';
 import { StepRunner } from '@src/support/step-runner';
-import { uniqueTestId, GUEST_UPLOAD_PREFIX } from '@src/support/test-data';
+import { uniqueTestId, GUEST_UPLOAD_PREFIX, USER_FOLDER } from '@src/support/test-data';
 import { YopmailBrowserClient } from '@src/support/yopmail';
 import { GuestUploadPage } from '@src/pages/guest-upload.page';
 
@@ -31,17 +31,17 @@ test.describe('Guest upload journey @regression', () => {
     try {
       await steps.run('Step 1: Sign in, go to DAM > Assets, and open user folder', async () => {
         await assetsPage.navigateToAssets();
-        await assetsPage.openUserFolder(env.folderName);
+        await assetsPage.openUserFolder(USER_FOLDER);
       });
 
       await steps.run(
         'Step 2-4: Enable edit mode, guest upload invite, and send email',
         async () => {
           await assetsPage.enableEditMode();
-          await assetsPage.rightClickFolder(env.folderName);
+          await assetsPage.rightClickFolder(USER_FOLDER);
           await assetsPage.clickGuestUploadShare();
           guestLinkTimestamp = new Date();
-          await assetsPage.sendGuestUploadInvite(env.shareEmail);
+          await assetsPage.sendGuestUploadInvite(env.testEmail);
         },
       );
 
@@ -80,7 +80,7 @@ test.describe('Guest upload journey @regression', () => {
       await steps.run('Step 8: Verify jpg uploaded in DAM folder', async () => {
         await page.bringToFront();
         await assetsPage.navigateToAssets();
-        await assetsPage.openUserFolder(env.folderName);
+        await assetsPage.openUserFolder(USER_FOLDER);
         await assetsPage.verifyAssetExists(imageStem);
       });
 

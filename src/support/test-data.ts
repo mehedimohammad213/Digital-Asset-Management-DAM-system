@@ -10,3 +10,4 @@ export function yopmailUsername(email: string): string {
 
 export const LOCAL_UPLOAD_PREFIX = 'S1-VIDEO';
 export const GUEST_UPLOAD_PREFIX = 'S2-IMAGE';
+export const USER_FOLDER = 'mehedi';

@@ -4,7 +4,7 @@ import { test, expect } from '@src/fixtures/base.fixture';
 import { uniqueTestFile } from '@src/pages/asset-detail.page';
 import { cleanupAutomationAssetsInFolder } from '@src/support/asset-cleanup';
 import { StepRunner } from '@src/support/step-runner';
-import { uniqueTestId, LOCAL_UPLOAD_PREFIX } from '@src/support/test-data';
+import { uniqueTestId, LOCAL_UPLOAD_PREFIX, USER_FOLDER } from '@src/support/test-data';
 
 test.describe('Local upload journey @smoke @regression', () => {
   test.describe.configure({ mode: 'serial' });
@@ -33,8 +33,8 @@ test.describe('Local upload journey @smoke @regression', () => {
     try {
       await steps.run('Step 1: Navigate to user folder and cleanup', async () => {
         await assetsPage.navigateToAssets();
-        await assetsPage.openUserFolder(env.folderName);
-        await cleanupAutomationAssetsInFolder(page, env.folderName);
+        await assetsPage.openUserFolder(USER_FOLDER);
+        await cleanupAutomationAssetsInFolder(page, USER_FOLDER);
       });
 
       await steps.run('Step 2-4: Upload mp4, fill metadata, confirm and wait', async () => {
@@ -50,7 +50,7 @@ test.describe('Local upload journey @smoke @regression', () => {
           hyperlink: 'https://qatest.marcombox.com/',
         });
         await assetDetailPage.save();
-        await assetsPage.openUserFolder(env.folderName);
+        await assetsPage.openUserFolder(USER_FOLDER);
         await expect(page.getByText(/[1-9]\d* items/i).first()).toBeVisible({ timeout: 60_000 });
       });
 

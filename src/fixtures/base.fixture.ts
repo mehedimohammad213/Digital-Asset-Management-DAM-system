@@ -2,18 +2,15 @@ import { test as base, expect } from '@playwright/test';
 import { getEnv, type TestEnv } from '../config/environment';
 import { AssetsPage } from '../pages/assets.page';
 import { AssetDetailPage } from '../pages/asset-detail.page';
-import { GuestUploadPage } from '../pages/guest-upload.page';
 import { LoginPage } from '../pages/login.page';
-import { YopmailBrowserClient, YopmailClient } from '../support/yopmail';
+import { YopmailClient } from '../support/yopmail';
 
 type AppFixtures = {
   env: TestEnv;
   loginPage: LoginPage;
   assetsPage: AssetsPage;
   assetDetailPage: AssetDetailPage;
-  guestUploadPage: GuestUploadPage;
   yopmailApi: YopmailClient;
-  createYopmailBrowser: (email?: string) => YopmailBrowserClient;
 };
 
 export const test = base.extend<AppFixtures>({
@@ -35,16 +32,8 @@ export const test = base.extend<AppFixtures>({
     await use(new AssetDetailPage(page));
   },
 
-  guestUploadPage: async ({ page }, use) => {
-    await use(new GuestUploadPage(page));
-  },
-
   yopmailApi: async ({ request, env }, use) => {
     await use(new YopmailClient(request, env.testEmail));
-  },
-
-  createYopmailBrowser: async ({ page, env }, use) => {
-    await use((email?: string) => new YopmailBrowserClient(page, email ?? env.testEmail));
   },
 });
 

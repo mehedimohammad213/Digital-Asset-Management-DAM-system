@@ -9,8 +9,6 @@
     "test:headed": "playwright test --headed",
     "test:local-upload": "playwright test tests/journeys/local-upload.spec.ts",
     "test:guest-upload": "playwright test tests/journeys/guest-upload.spec.ts",
-    "test:scenario1": "npm run test:local-upload",
-    "test:scenario2": "npm run test:guest-upload",
     "report": "playwright show-report",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

@@ -34,7 +34,7 @@ tests/journeys/          → regression flows (reuse saved auth session)
 ## Environment Assumptions
 
 - Target: `https://qatest.marcombox.com` (QA)
-- Dedicated user folder exists (`USER_FOLDER_NAME`)
+- DAM folder `mehedi` exists in Assets (`USER_FOLDER` in `src/support/test-data.ts`)
 - Yopmail inbox accessible for share/OTP emails
 - Video processing may take up to 3 minutes
 

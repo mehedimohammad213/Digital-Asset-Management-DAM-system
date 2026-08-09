@@ -22,8 +22,8 @@ Edit `.env` (never commit it):
 | `MARCOMBOX_EMAIL`    | Login email                                       |
 | `MARCOMBOX_PASSWORD` | Login password                                    |
 | `MARCOMBOX_BASE_URL` | App URL (default: `https://qatest.marcombox.com`) |
-| `USER_FOLDER_NAME`   | Your folder in DAM > Assets (e.g. `mehedi`)       |
-| `TEST_EMAIL`         | Inbox for share/guest-upload emails (Yopmail OK)  |
+| `TEST_EMAIL`         | Inbox for guest-upload emails (Yopmail OK)        |
+| `SHARE_EMAIL`        | Recipient for asset share emails (default: Gmail) |
 
 ## Running Tests
 
@@ -36,8 +36,6 @@ npm run test:guest-upload   # Journey 2: guest upload via email
 npm run test:headed         # Debug with visible browser
 npm run report              # Open HTML report
 ```
-
-Legacy aliases `test:scenario1` and `test:scenario2` still work.
 
 ## Project Structure
 
@@ -82,6 +80,7 @@ docs/TEST_STRATEGY.md                   # Scope, tags, risks
 | Add a new test           | `tests/smoke/` or `tests/journeys/` |
 | Email / Yopmail logic    | `src/support/email.ts`              |
 | Safe asset cleanup rules | `src/support/asset-prefixes.ts`     |
+| Change DAM user folder   | `src/support/test-data.ts` (`USER_FOLDER`) |
 
 Import project code using the `@src/` alias:
 
@@ -114,10 +113,10 @@ npm run validate    # typecheck + lint + format check
 npm run docker:build && npm run docker:test
 ```
 
-GitHub Actions runs on every push/PR to `main`. Configure repository secrets: `MARCOMBOX_EMAIL`, `MARCOMBOX_PASSWORD`, `MARCOMBOX_BASE_URL`, `USER_FOLDER_NAME`, `TEST_EMAIL`.
+GitHub Actions runs on every push/PR to `main`. Configure repository secrets: `MARCOMBOX_EMAIL`, `MARCOMBOX_PASSWORD`, `MARCOMBOX_BASE_URL`, `TEST_EMAIL`, `SHARE_EMAIL`.
 
 ## Assumptions
 
-- Your user folder must exist in DAM > Assets before running journeys
+- DAM folder `mehedi` must exist in Assets (change `USER_FOLDER` in `src/support/test-data.ts` if needed)
 - Yopmail inbox must be accessible for email steps
 - Video processing may take up to 3 minutes on slow networks

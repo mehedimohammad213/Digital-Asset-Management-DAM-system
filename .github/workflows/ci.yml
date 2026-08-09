@@ -53,8 +53,8 @@ jobs:
           MARCOMBOX_EMAIL: ${{ secrets.MARCOMBOX_EMAIL }}
           MARCOMBOX_PASSWORD: ${{ secrets.MARCOMBOX_PASSWORD }}
           MARCOMBOX_BASE_URL: ${{ secrets.MARCOMBOX_BASE_URL }}
-          USER_FOLDER_NAME: ${{ secrets.USER_FOLDER_NAME }}
           TEST_EMAIL: ${{ secrets.TEST_EMAIL }}
+          SHARE_EMAIL: ${{ secrets.SHARE_EMAIL }}
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
