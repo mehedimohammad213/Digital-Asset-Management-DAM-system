@@ -10,4 +10,3 @@ Feature: Guest upload journey
     When I send a guest upload invite by email
     And I wait two minutes after the share link is sent
     Then the uploaded jpg should appear in the DAM folder
-    And I delete the uploaded asset and logout

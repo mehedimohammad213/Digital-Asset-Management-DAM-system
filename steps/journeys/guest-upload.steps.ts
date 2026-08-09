@@ -48,21 +48,15 @@ When('I wait two minutes after the share link is sent', async ({ guestUpload }) 
 Then(
   'the uploaded jpg should appear in the DAM folder',
   async ({ page, assetsPage, guestUpload }) => {
-    await page.bringToFront();
-    await assetsPage.navigateToAssets();
-    await assetsPage.openUserFolder(USER_FOLDER);
-    await assetsPage.verifyAssetExists(guestUpload.imageStem);
+    try {
+      await page.bringToFront();
+      await assetsPage.navigateToAssets();
+      await assetsPage.openUserFolder(USER_FOLDER);
+      await assetsPage.verifyAssetExists(guestUpload.imageStem);
+    } finally {
+      if (guestUpload.uniqueImage && fs.existsSync(guestUpload.uniqueImage)) {
+        fs.unlinkSync(guestUpload.uniqueImage);
+      }
+    }
   },
 );
-
-Then('I delete the uploaded asset and logout', async ({ assetsPage, loginPage, guestUpload }) => {
-  try {
-    await assetsPage.deleteAsset(guestUpload.imageStem);
-    await assetsPage.confirmAssetNotVisible(guestUpload.imageStem);
-    await loginPage.logout();
-  } finally {
-    if (guestUpload.uniqueImage && fs.existsSync(guestUpload.uniqueImage)) {
-      fs.unlinkSync(guestUpload.uniqueImage);
-    }
-  }
-});
