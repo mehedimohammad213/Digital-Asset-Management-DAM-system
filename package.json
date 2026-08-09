@@ -1,14 +1,14 @@
 {
-  "name": "marcombox-dam-automation",
+  "name": "dam-automation",
   "version": "1.0.0",
-  "description": "Playwright automation for MarcomBox DAM asset lifecycle tests",
+  "description": "Playwright automation for DAM asset lifecycle tests",
   "scripts": {
     "test": "playwright test",
     "test:smoke": "playwright test --grep @smoke",
     "test:regression": "playwright test --grep @regression",
     "test:headed": "playwright test --headed",
-    "test:local-upload": "playwright test tests/marcombox-journeys/marcombox.local-upload.spec.ts",
-    "test:guest-upload": "playwright test tests/marcombox-journeys/marcombox.guest-upload.spec.ts",
+    "test:local-upload": "playwright test tests/journeys/local-upload.spec.ts",
+    "test:guest-upload": "playwright test tests/journeys/guest-upload.spec.ts",
     "test:scenario1": "npm run test:local-upload",
     "test:scenario2": "npm run test:guest-upload",
     "report": "playwright show-report",

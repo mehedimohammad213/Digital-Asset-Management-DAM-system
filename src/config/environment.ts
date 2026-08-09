@@ -1,4 +1,4 @@
-export interface MarcomboxEnv {
+export interface TestEnv {
   email: string;
   password: string;
   baseUrl: string;
@@ -14,8 +14,8 @@ function requireEnv(name: string): string {
   return value;
 }
 
-/** Load and validate MarcomBox credentials from .env */
-export function getMarcomboxEnv(): MarcomboxEnv {
+/** Load and validate credentials from .env */
+export function getEnv(): TestEnv {
   return {
     email: requireEnv('MARCOMBOX_EMAIL'),
     password: requireEnv('MARCOMBOX_PASSWORD'),

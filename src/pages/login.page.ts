@@ -1,6 +1,6 @@
 import { Page, expect } from '@playwright/test';
 
-export class MarcomboxLoginPage {
+export class LoginPage {
   constructor(private readonly page: Page) {}
 
   async login(email: string, password: string): Promise<void> {

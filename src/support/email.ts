@@ -1,6 +1,6 @@
-import { MarcomboxYopmailBrowserClient, MarcomboxYopmailClient } from './marcombox.yopmail';
+import { YopmailBrowserClient, YopmailClient } from './yopmail';
 
-type MarcomboxEmailWaitOptions = {
+type EmailWaitOptions = {
   bodyContains?: string;
   bodyMatches?: RegExp;
   since: Date;
@@ -9,10 +9,10 @@ type MarcomboxEmailWaitOptions = {
 };
 
 /** Prefer API polling; fall back to browser inbox when HTML parsing fails. */
-export async function waitForMarcomboxEmail(
-  api: MarcomboxYopmailClient,
-  browserClient: MarcomboxYopmailBrowserClient,
-  options: MarcomboxEmailWaitOptions,
+export async function waitForEmailWithFallback(
+  api: YopmailClient,
+  browserClient: YopmailBrowserClient,
+  options: EmailWaitOptions,
 ): Promise<{ body: string; link?: string }> {
   try {
     const mail = await api.waitForEmail({

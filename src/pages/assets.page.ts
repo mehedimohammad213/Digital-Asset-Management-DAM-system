@@ -1,7 +1,7 @@
 import { Page, expect } from '@playwright/test';
 import path from 'path';
 
-export class MarcomboxAssetsPage {
+export class AssetsPage {
   constructor(private readonly page: Page) {}
 
   async navigateToAssets(): Promise<void> {

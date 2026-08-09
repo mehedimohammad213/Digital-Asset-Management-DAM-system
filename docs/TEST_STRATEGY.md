@@ -1,4 +1,4 @@
-# Test Strategy — MarcomBox DAM Automation
+# Test Strategy — DAM Automation
 
 ## Scope
 
@@ -26,10 +26,9 @@ Out of scope: performance testing, visual regression, mobile viewports, producti
 global-setup.ts          → saves authenticated session to .auth/user.json
 src/fixtures/            → shared page objects + env config injected into tests
 src/pages/               → Page Object Model (selectors isolated from specs)
-src/helpers/             → email polling, cleanup, test data factories
-tests/auth/              → unauthenticated project (fresh browser context)
-tests/api/               → API smoke (uses authenticated base URL only)
-tests/scenario*.spec.ts  → regression flows (reuse saved auth session)
+src/support/             → email polling, cleanup, test data factories
+tests/smoke/             → unauthenticated + API smoke tests
+tests/journeys/          → regression flows (reuse saved auth session)
 ```
 
 ## Environment Assumptions

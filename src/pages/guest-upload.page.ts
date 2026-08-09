@@ -1,7 +1,7 @@
 import { Page, expect } from '@playwright/test';
 import path from 'path';
 
-export class MarcomboxGuestUploadPage {
+export class GuestUploadPage {
   constructor(private readonly page: Page) {}
 
   async openLink(url: string): Promise<void> {

@@ -1,6 +1,6 @@
 import { Page, test } from '@playwright/test';
 
-export interface MarcomboxStepFailure {
+export interface StepFailure {
   step: string;
   message: string;
 }
@@ -11,8 +11,8 @@ function formatError(error: unknown): string {
 }
 
 /** Run journey steps independently — failures are recorded and remaining steps still run. */
-export class MarcomboxStepRunner {
-  readonly failures: MarcomboxStepFailure[] = [];
+export class StepRunner {
+  readonly failures: StepFailure[] = [];
 
   constructor(
     private readonly page: Page,

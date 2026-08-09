@@ -1,8 +1,8 @@
-# MarcomBox DAM Automation
+# DAM Automation
 
-Playwright + TypeScript test suite for the **MarcomBox Digital Asset Management (DAM)** QA environment.
+Playwright + TypeScript test suite for the **Digital Asset Management (DAM)** QA environment.
 
-This project is organized so a junior QA engineer can find code quickly: every folder and file is named after MarcomBox, and tests are grouped by purpose (smoke vs. journeys).
+This project is organized so a junior QA engineer can find code quickly: tests are grouped by purpose (smoke vs. journeys), and shared code lives under `src/`.
 
 ## Quick Start
 
@@ -42,61 +42,61 @@ Legacy aliases `test:scenario1` and `test:scenario2` still work.
 ## Project Structure
 
 ```
-marcombox-dam/                          # All reusable automation code
+src/                          # All reusable automation code
 ├── config/
-│   └── marcombox.environment.ts        # Reads .env credentials
+│   └── environment.ts        # Reads .env credentials
 ├── fixtures/
-│   └── marcombox.fixture.ts            # Injects pages + env into tests
+│   └── base.fixture.ts       # Injects pages + env into tests
 ├── pages/                              # Page Object Model (UI actions)
-│   ├── marcombox-login.page.ts
-│   ├── marcombox-assets.page.ts
-│   ├── marcombox-asset-detail.page.ts
-│   └── marcombox-guest-upload.page.ts
+│   ├── login.page.ts
+│   ├── assets.page.ts
+│   ├── asset-detail.page.ts
+│   └── guest-upload.page.ts
 └── support/                            # Shared helpers
-    ├── marcombox.asset-cleanup.ts
-    ├── marcombox.asset-prefixes.ts
-    ├── marcombox.email.ts
-    ├── marcombox.step-runner.ts
-    ├── marcombox.test-data.ts
-    └── marcombox.yopmail.ts
+    ├── asset-cleanup.ts
+    ├── asset-prefixes.ts
+    ├── email.ts
+    ├── step-runner.ts
+    ├── test-data.ts
+    └── yopmail.ts
 
 tests/
-├── marcombox-smoke/                    # Fast, critical-path checks
-│   ├── marcombox.api-health.spec.ts
-│   └── marcombox.login.spec.ts
-└── marcombox-journeys/                 # End-to-end business flows
-    ├── marcombox.local-upload.spec.ts
-    └── marcombox.guest-upload.spec.ts
+├── smoke/                    # Fast, critical-path checks
+│   ├── api-health.spec.ts
+│   └── login.spec.ts
+└── journeys/                 # End-to-end business flows
+    ├── local-upload.spec.ts
+    └── guest-upload.spec.ts
 
-test-data/marcombox/                    # Sample files for uploads
-marcombox.global-setup.ts               # Logs in once, saves session
+test-data/                    # Sample files for uploads
+global-setup.ts               # Logs in once, saves session
 docs/TEST_STRATEGY.md                   # Scope, tags, risks
 ```
 
 ## Where to Change What
 
-| Task                     | File to edit                                            |
-| ------------------------ | ------------------------------------------------------- |
-| Add a new UI action      | `marcombox-dam/pages/marcombox-*.page.ts`               |
-| Change login / env setup | `marcombox-dam/config/marcombox.environment.ts`         |
-| Add a new test           | `tests/marcombox-smoke/` or `tests/marcombox-journeys/` |
-| Email / Yopmail logic    | `marcombox-dam/support/marcombox.email.ts`              |
-| Safe asset cleanup rules | `marcombox-dam/support/marcombox.asset-prefixes.ts`     |
+| Task                     | File to edit                        |
+| ------------------------ | ----------------------------------- |
+| Add a new UI action      | `src/pages/*.page.ts`               |
+| Change login / env setup | `src/config/environment.ts`         |
+| Add a new test           | `tests/smoke/` or `tests/journeys/` |
+| Email / Yopmail logic    | `src/support/email.ts`              |
+| Safe asset cleanup rules | `src/support/asset-prefixes.ts`     |
 
-Import project code using the `@marcombox/` alias:
+Import project code using the `@src/` alias:
 
 ```typescript
-import { test, expect } from '@marcombox/fixtures/marcombox.fixture';
-import { MarcomboxAssetsPage } from '@marcombox/pages/marcombox-assets.page';
+import { test, expect } from '@src/fixtures/base.fixture';
+import { AssetsPage } from '@src/pages/assets.page';
 ```
 
 ## Test Journeys
 
-### Local upload (`marcombox.local-upload.spec.ts`) — `@smoke @regression`
+### Local upload (`local-upload.spec.ts`) — `@smoke @regression`
 
 Sign in → upload `.mp4` → fill metadata → edit → search → download → share via email → delete → logout.
 
-### Guest upload (`marcombox.guest-upload.spec.ts`) — `@regression`
+### Guest upload (`guest-upload.spec.ts`) — `@regression`
 
 Sign in → send guest upload invite → open link + OTP from email → upload `.jpg` → verify in DAM → delete → logout.
 

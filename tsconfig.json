@@ -13,13 +13,8 @@
     "rootDir": ".",
     "baseUrl": ".",
     "paths": {
-      "@marcombox/*": ["marcombox-dam/*"]
+      "@src/*": ["src/*"]
     }
   },
-  "include": [
-    "marcombox-dam/**/*",
-    "tests/**/*",
-    "playwright.config.ts",
-    "marcombox.global-setup.ts"
-  ]
+  "include": ["src/**/*", "tests/**/*", "playwright.config.ts", "global-setup.ts"]
 }

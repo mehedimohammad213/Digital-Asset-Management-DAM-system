@@ -2,7 +2,7 @@ import { Page, expect, Locator } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
 
-export interface MarcomboxAssetMetadata {
+export interface AssetMetadata {
   title: string;
   type: string;
   dateTime: string;
@@ -12,14 +12,14 @@ export interface MarcomboxAssetMetadata {
   hyperlink: string;
 }
 
-export class MarcomboxAssetDetailPage {
+export class AssetDetailPage {
   constructor(private readonly page: Page) {}
 
   private uploadDialog(): Locator {
     return this.page.getByRole('dialog', { name: 'Upload files' });
   }
 
-  async fillMetadata(data: MarcomboxAssetMetadata): Promise<void> {
+  async fillMetadata(data: AssetMetadata): Promise<void> {
     const dialog = this.uploadDialog();
     await expect(dialog).toBeVisible({ timeout: 30_000 });
 
@@ -83,7 +83,7 @@ export class MarcomboxAssetDetailPage {
   }
 
   async verifyMetadata(
-    data: Partial<MarcomboxAssetMetadata> & { fileName?: string; itemId?: string },
+    data: Partial<AssetMetadata> & { fileName?: string; itemId?: string },
   ): Promise<void> {
     await this.page
       .getByRole('paragraph')
@@ -164,7 +164,7 @@ export class MarcomboxAssetDetailPage {
 }
 
 /** Copy test file to a unique path to avoid duplicate-name upload errors. */
-export function uniqueMarcomboxTestFile(sourcePath: string, prefix: string): string {
+export function uniqueTestFile(sourcePath: string, prefix: string): string {
   const ext = path.extname(sourcePath);
   const uniqueName = `${prefix}-${Date.now()}${ext}`;
   const dest = path.join(path.dirname(sourcePath), uniqueName);

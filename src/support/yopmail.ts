@@ -1,9 +1,9 @@
 import { APIRequestContext, Page } from '@playwright/test';
-import { yopmailUsername } from './marcombox.test-data';
+import { yopmailUsername } from './test-data';
 
 const YOPMAIL_BASE = 'https://yopmail.com';
 
-export class MarcomboxYopmailClient {
+export class YopmailClient {
   constructor(
     private readonly request: APIRequestContext,
     private readonly email: string,
@@ -91,7 +91,7 @@ export class MarcomboxYopmailClient {
 }
 
 /** Browser-based Yopmail reader (fallback when API parsing fails). */
-export class MarcomboxYopmailBrowserClient {
+export class YopmailBrowserClient {
   constructor(
     private readonly page: Page,
     private readonly email: string,

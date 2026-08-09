@@ -1,5 +1,5 @@
-/** Format date/time for MarcomBox metadata fields (MM/DD/YYYY HH:mm). */
-export function formatMarcomboxDateTime(date: Date = new Date()): string {
+/** Format date/time for DAM metadata fields (MM/DD/YYYY HH:mm). */
+export function formatDateTime(date: Date = new Date()): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   const month = pad(date.getMonth() + 1);
   const day = pad(date.getDate());

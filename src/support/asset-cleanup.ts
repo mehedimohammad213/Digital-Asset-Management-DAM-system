@@ -1,34 +1,34 @@
 import { Page } from '@playwright/test';
-import { isMarcomboxAutomationAsset } from './marcombox.asset-prefixes';
-import { MarcomboxAssetsPage } from '../pages/marcombox-assets.page';
+import { isAutomationAsset } from './asset-prefixes';
+import { AssetsPage } from '../pages/assets.page';
 
-export async function cleanupMarcomboxAutomationAssets(
+export async function cleanupAutomationAssets(
   page: Page,
   folderName: string,
   identifiers: string[],
 ): Promise<void> {
-  const assetsPage = new MarcomboxAssetsPage(page);
+  const assetsPage = new AssetsPage(page);
   await assetsPage.navigateToAssets();
   await assetsPage.openUserFolder(folderName);
 
   for (const id of identifiers) {
-    if (!isMarcomboxAutomationAsset(id)) continue;
+    if (!isAutomationAsset(id)) continue;
     await assetsPage.deleteAssetIfVisible(id);
   }
 }
 
 /** Remove leftover automation assets in a folder (prefix-based, non-destructive to manual data). */
-export async function cleanupMarcomboxAutomationAssetsInFolder(
+export async function cleanupAutomationAssetsInFolder(
   page: Page,
   folderName: string,
 ): Promise<void> {
-  const assetsPage = new MarcomboxAssetsPage(page);
+  const assetsPage = new AssetsPage(page);
   await assetsPage.navigateToAssets();
   await assetsPage.openUserFolder(folderName);
 
   const names = await assetsPage.listAssetNames();
   for (const name of names) {
-    if (isMarcomboxAutomationAsset(name)) {
+    if (isAutomationAsset(name)) {
       await assetsPage.deleteAssetIfVisible(name);
     }
   }
