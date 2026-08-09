@@ -1,12 +1,20 @@
 import { defineConfig, devices } from '@playwright/test';
+import { defineBddConfig } from 'playwright-bdd';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 const authFile = '.auth/user.json';
 
+const testDir = defineBddConfig({
+  features: 'features/**/*.feature',
+  steps: ['steps/**/*.ts', 'src/fixtures/bdd.fixture.ts'],
+  featuresRoot: 'features',
+  outputDir: '.features-gen',
+});
+
 export default defineConfig({
-  testDir: './tests',
+  testDir,
   globalSetup: './global-setup.ts',
   fullyParallel: true,
   workers: process.env.CI ? 2 : 2,
@@ -15,7 +23,14 @@ export default defineConfig({
   expect: { timeout: 30_000 },
   reporter: [
     ['list'],
-    ['html', { open: 'never', outputFolder: 'playwright-report' }],
+    [
+      'allure-playwright',
+      {
+        resultsDir: 'allure-results',
+        detail: true,
+        suiteTitle: false,
+      },
+    ],
     ['junit', { outputFile: 'test-results/junit.xml' }],
   ],
   use: {
@@ -29,7 +44,7 @@ export default defineConfig({
   projects: [
     {
       name: 'unauthenticated',
-      testMatch: /smoke\/login\.spec\.ts/,
+      testMatch: /smoke\/login\.feature\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
         storageState: { cookies: [], origins: [] },
@@ -37,7 +52,7 @@ export default defineConfig({
     },
     {
       name: 'chromium',
-      testIgnore: /smoke\/login\.spec\.ts/,
+      testIgnore: /smoke\/login\.feature\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
         storageState: authFile,

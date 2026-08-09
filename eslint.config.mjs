@@ -4,7 +4,7 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['dist/**', 'playwright-report/**', 'test-results/**', 'node_modules/**'],
+    ignores: ['dist/**', 'playwright-report/**', 'test-results/**', 'node_modules/**', '.features-gen/**', 'allure-results/**', 'allure-report/**'],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
@@ -24,11 +24,12 @@ export default tseslint.config(
   },
   {
     ...playwright.configs['flat/recommended'],
-    files: ['tests/**/*.ts'],
+    files: ['steps/**/*.ts', 'tests/**/*.ts'],
     rules: {
       ...playwright.configs['flat/recommended'].rules,
       'playwright/no-wait-for-timeout': 'warn',
       'playwright/expect-expect': 'off',
+      'playwright/no-standalone-expect': 'off',
     },
   },
 );

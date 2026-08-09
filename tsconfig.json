@@ -16,5 +16,5 @@
       "@src/*": ["src/*"]
     }
   },
-  "include": ["src/**/*", "tests/**/*", "playwright.config.ts", "global-setup.ts"]
+  "include": ["src/**/*", "steps/**/*", "playwright.config.ts", "global-setup.ts"]
 }

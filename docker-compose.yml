@@ -12,4 +12,5 @@ services:
         required: false
     volumes:
       - ./test-results:/app/test-results
-      - ./playwright-report:/app/playwright-report
+      - ./allure-results:/app/allure-results
+      - ./allure-report:/app/allure-report

@@ -9,4 +9,4 @@ COPY . .
 
 ENV CI=true
 
-CMD ["npx", "playwright", "test"]
+CMD ["sh", "-c", "npx bddgen && npx playwright test"]
