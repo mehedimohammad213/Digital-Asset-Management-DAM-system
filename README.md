@@ -146,10 +146,14 @@ After every CI run, download the **playwright-report** artifact from the workflo
 
 ### Scenario 2: Folder Upload and Filter (`.jpg`) — `@regression`
 
-1. Enable edit mode → guest upload invite
-2. Open link from inbox → OTP verification
-3. Upload JPG via guest portal
-4. Verify in DAM folder and cleanup
+1. Sign in → DAM > Assets → open your user folder
+2. Enable edit mode (pencil icon) → right-click your folder → Guest upload/share
+3. Enter test email → Send
+4. Open invite link from inbox → enter OTP from follow-up email → Verify
+5. Browse Files → upload local `.jpg`
+6. Return to DAM → confirm JPG appears in your folder → delete and logout
+
+Run with: `npm run test:scenario2`
 
 ## Design Decisions
 

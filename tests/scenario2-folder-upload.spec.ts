@@ -3,6 +3,7 @@ import fs from 'fs';
 import { test, expect } from '../src/fixtures/test.fixture';
 import { uniqueTestFile } from '../src/pages/AssetDetailPage';
 import { extractOtpFromBody, waitForEmailWithFallback } from '../src/helpers/email';
+import { StepRunner } from '../src/helpers/stepRunner';
 import { uniqueTestId, SCENARIO2_PREFIX } from '../src/helpers/testData';
 import { YopmailBrowserClient } from '../src/helpers/yopmail';
 import { GuestUploadPage } from '../src/pages/GuestUploadPage';
@@ -18,19 +19,22 @@ test.describe('Scenario 2: Folder Upload and Filter @regression', () => {
     loginPage,
     yopmailApi,
   }) => {
+    const steps = new StepRunner(page);
+
     const testIdentity = uniqueTestId(SCENARIO2_PREFIX);
     const sourceImage = path.join(__dirname, '../test-data/sample.jpg');
     const uniqueImage = uniqueTestFile(sourceImage, `automation-image-${testIdentity}`);
     const imageStem = path.parse(uniqueImage).name;
 
-    let guestLinkTimestamp: Date;
+    let guestLinkTimestamp: Date | undefined;
 
     try {
-      await test.step('Navigate to DAM Assets', async () => {
+      await steps.run('Step 1: Sign in, go to DAM > Assets, and open user folder', async () => {
         await assetsPage.navigateToAssets();
+        await assetsPage.openUserFolder(env.folderName);
       });
 
-      await test.step('Enable edit mode and send guest upload invite', async () => {
+      await steps.run('Step 2-4: Enable edit mode, guest upload invite, and send email', async () => {
         await assetsPage.enableEditMode();
         await assetsPage.rightClickFolder(env.folderName);
         await assetsPage.clickGuestUploadShare();
@@ -38,13 +42,13 @@ test.describe('Scenario 2: Folder Upload and Filter @regression', () => {
         await assetsPage.sendGuestUploadInvite(env.testEmail);
       });
 
-      await test.step('Open guest link and verify via OTP', async () => {
+      await steps.run('Step 5-7: Open guest link, verify OTP, and upload jpg', async () => {
         const yopmailPage = await context.newPage();
         const browserClient = new YopmailBrowserClient(yopmailPage, env.testEmail);
 
         const inviteMail = await waitForEmailWithFallback(yopmailApi, browserClient, {
           bodyContains: 'marcombox',
-          since: guestLinkTimestamp,
+          since: guestLinkTimestamp ?? new Date(0),
           timeoutMs: 120_000,
         });
         expect(inviteMail.link).toBeTruthy();
@@ -54,11 +58,12 @@ test.describe('Scenario 2: Folder Upload and Filter @regression', () => {
         const guestUpload = new GuestUploadPage(guestPage);
         await guestUpload.openLink(inviteMail.link!);
 
+        const otpTimestamp = new Date();
         const otpYopmailPage = await context.newPage();
         const otpBrowserClient = new YopmailBrowserClient(otpYopmailPage, env.testEmail);
         const otpMail = await waitForEmailWithFallback(yopmailApi, otpBrowserClient, {
           bodyMatches: /\b\d{4,8}\b/,
-          since: guestLinkTimestamp,
+          since: otpTimestamp,
           timeoutMs: 120_000,
         });
         const otp = extractOtpFromBody(otpMail.body);
@@ -69,18 +74,20 @@ test.describe('Scenario 2: Folder Upload and Filter @regression', () => {
         await guestPage.close();
       });
 
-      await test.step('Verify jpg uploaded in DAM folder', async () => {
+      await steps.run('Step 8: Verify jpg uploaded in DAM folder', async () => {
         await page.bringToFront();
         await assetsPage.navigateToAssets();
         await assetsPage.openUserFolder(env.folderName);
         await assetsPage.verifyAssetExists(imageStem);
       });
 
-      await test.step('Cleanup uploaded asset', async () => {
+      await steps.run('Cleanup: Delete uploaded asset and logout', async () => {
         await assetsPage.deleteAsset(imageStem);
         await assetsPage.confirmAssetNotVisible(imageStem);
         await loginPage.logout();
       });
+
+      steps.assertAllPassed();
     } finally {
       if (fs.existsSync(uniqueImage)) fs.unlinkSync(uniqueImage);
     }

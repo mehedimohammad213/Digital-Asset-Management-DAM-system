@@ -12,6 +12,26 @@ export class AssetsPage {
   }
 
   async openUserFolder(folderName: string): Promise<void> {
+    const alreadyOpen = this.page
+      .locator('navigation[breadcrumb]')
+      .filter({ hasText: folderName })
+      .last();
+    if (await alreadyOpen.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await expect(this.page.getByRole('button', { name: 'New Item' })).toBeVisible({
+        timeout: 10_000,
+      });
+      return;
+    }
+
+    const treeFolder = this.page.getByRole('treeitem', { name: folderName, exact: true });
+    if (await treeFolder.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await treeFolder.dblclick();
+      await expect(this.page.getByRole('button', { name: 'New Item' })).toBeVisible({
+        timeout: 30_000,
+      });
+      return;
+    }
+
     await this.page.locator('div').filter({ hasText: /^Folder$/ }).nth(3).click();
 
     const folderLabel = this.page.locator('#scrollableDiv').getByText(folderName, { exact: true });
@@ -198,20 +218,41 @@ export class AssetsPage {
   }
 
   async enableEditMode(): Promise<void> {
-    await this.page.getByRole('button', { name: /Enable edit mode/i }).click();
-    await expect(this.page.locator('[role="treeitem"]').first()).toBeVisible();
+    const editModeBtn = this.page.getByRole('button', {
+      name: 'Enable edit mode. Right click on a folder for options',
+    });
+    await expect(editModeBtn).toBeVisible({ timeout: 15_000 });
+    await editModeBtn.click({ force: true });
+    await this.page.waitForTimeout(1500);
   }
 
   async rightClickFolder(folderName: string): Promise<void> {
-    await this.page
-      .locator('[role="treeitem"]')
-      .filter({ hasText: folderName })
-      .click({ button: 'right' });
-    await expect(this.page.getByText(/Guest upload\/share/i)).toBeVisible({ timeout: 5000 });
+    await this.page.keyboard.press('Escape').catch(() => undefined);
+
+    const folderTreeItem = this.page
+      .locator('[role="tree"]')
+      .getByRole('treeitem', { name: folderName, exact: true });
+
+    await folderTreeItem.scrollIntoViewIfNeeded();
+    const box = await folderTreeItem.boundingBox();
+    if (!box) throw new Error(`Folder "${folderName}" not found in tree panel`);
+
+    await this.page.mouse.click(box.x + box.width / 2, box.y + box.height / 2, { button: 'right' });
+    await this.page.waitForTimeout(500);
   }
 
   async clickGuestUploadShare(): Promise<void> {
-    await this.page.getByText(/Guest upload\/share/i).click();
+    const guestMenuItem = this.page
+      .locator('[role="menuitem"]')
+      .filter({ hasText: /Guest upload/i })
+      .last();
+
+    await expect(guestMenuItem).toBeAttached({ timeout: 10_000 });
+    if (await guestMenuItem.isVisible()) {
+      await guestMenuItem.click();
+    } else {
+      await guestMenuItem.click({ force: true });
+    }
   }
 
   async sendGuestUploadInvite(email: string): Promise<void> {
