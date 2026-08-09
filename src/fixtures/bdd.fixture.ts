@@ -24,6 +24,7 @@ export type GuestUploadState = {
   uniqueImage: string;
   imageStem: string;
   guestLinkTimestamp?: Date;
+  shareLinkSuccess?: boolean;
 };
 
 type BddFixtures = {

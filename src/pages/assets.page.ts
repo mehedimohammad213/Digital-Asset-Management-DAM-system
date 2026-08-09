@@ -1,4 +1,4 @@
-import { Page, expect } from '@playwright/test';
+import { Page, expect, type Response } from '@playwright/test';
 import path from 'path';
 
 export class AssetsPage {
@@ -269,19 +269,22 @@ export class AssetsPage {
     }
   }
 
-  async sendGuestUploadInvite(email: string): Promise<void> {
+  async sendGuestUploadInvite(email: string): Promise<Response> {
     const dialog = this.page.getByRole('dialog').last();
     await expect(dialog).toBeVisible({ timeout: 15_000 });
     await dialog.locator('input[type="email"], input[type="text"]').first().fill(email);
     const sendButton = dialog.getByRole('button', { name: /send/i });
-    await this.clickSendAndWaitForShareLink(() => sendButton.click());
+    const response = await this.clickSendAndWaitForShareLink(() => sendButton.click());
     await expect(dialog)
       .not.toBeVisible({ timeout: 15_000 })
       .catch(() => undefined);
+    return response;
   }
 
   /** Wait for POST /List/ShareLink to return 200 — confirms the share email was sent. */
-  private async clickSendAndWaitForShareLink(clickSend: () => Promise<void>): Promise<void> {
+  private async clickSendAndWaitForShareLink(
+    clickSend: () => Promise<void>,
+  ): Promise<Response> {
     const shareLinkResponse = this.page.waitForResponse(
       (response) =>
         response.request().method() === 'POST' && response.url().includes('/List/ShareLink'),
@@ -292,6 +295,7 @@ export class AssetsPage {
 
     const response = await shareLinkResponse;
     expect(response.status()).toBe(200);
+    return response;
   }
 
   async verifyAssetExists(fileNameStem: string): Promise<void> {

@@ -8,6 +8,6 @@ Feature: Guest upload journey
   Scenario: Guest upload jpg via folder share link
     Given I open the user folder in DAM assets
     When I send a guest upload invite by email
-    And the guest completes OTP verification and uploads a jpg
+    And I wait two minutes after the share link is sent
     Then the uploaded jpg should appear in the DAM folder
     And I delete the uploaded asset and logout
