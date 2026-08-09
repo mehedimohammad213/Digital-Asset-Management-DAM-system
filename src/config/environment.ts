@@ -4,6 +4,7 @@ export interface TestEnv {
   baseUrl: string;
   folderName: string;
   testEmail: string;
+  shareEmail: string;
 }
 
 function requireEnv(name: string): string {
@@ -22,5 +23,9 @@ export function getEnv(): TestEnv {
     baseUrl: process.env.MARCOMBOX_BASE_URL?.trim() || 'https://qatest.marcombox.com',
     folderName: process.env.USER_FOLDER_NAME?.trim() || 'mehedi',
     testEmail: process.env.TEST_EMAIL?.trim() || requireEnv('MARCOMBOX_EMAIL'),
+    shareEmail:
+      process.env.SHARE_EMAIL?.trim() ||
+      process.env.TEST_EMAIL?.trim() ||
+      'mehedi.nopass@gmail.com',
   };
 }

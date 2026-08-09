@@ -162,7 +162,9 @@ export class AssetsPage {
     await this.page.locator('.mb-tag-field__input-container').click();
     await this.page.locator('[id^="react-select-"][id$="-input"]').fill(email);
     await this.page.locator('[id^="react-select-"][id$="-input"]').press('Enter');
-    await this.page.getByRole('button', { name: 'Email Link' }).click();
+    await this.clickSendAndWaitForShareLink(() =>
+      this.page.getByRole('button', { name: 'Email Link' }).click(),
+    );
   }
 
   async deleteSelectedAsset(): Promise<void> {
@@ -271,10 +273,25 @@ export class AssetsPage {
     const dialog = this.page.getByRole('dialog').last();
     await expect(dialog).toBeVisible({ timeout: 15_000 });
     await dialog.locator('input[type="email"], input[type="text"]').first().fill(email);
-    await dialog.getByRole('button', { name: /send/i }).click();
+    const sendButton = dialog.getByRole('button', { name: /send/i });
+    await this.clickSendAndWaitForShareLink(() => sendButton.click());
     await expect(dialog)
       .not.toBeVisible({ timeout: 15_000 })
       .catch(() => undefined);
+  }
+
+  /** Wait for POST /List/ShareLink to return 200 — confirms the share email was sent. */
+  private async clickSendAndWaitForShareLink(clickSend: () => Promise<void>): Promise<void> {
+    const shareLinkResponse = this.page.waitForResponse(
+      (response) =>
+        response.request().method() === 'POST' && response.url().includes('/List/ShareLink'),
+      { timeout: 60_000 },
+    );
+
+    await clickSend();
+
+    const response = await shareLinkResponse;
+    expect(response.status()).toBe(200);
   }
 
   async verifyAssetExists(fileNameStem: string): Promise<void> {

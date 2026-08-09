@@ -41,7 +41,7 @@ test.describe('Guest upload journey @regression', () => {
           await assetsPage.rightClickFolder(env.folderName);
           await assetsPage.clickGuestUploadShare();
           guestLinkTimestamp = new Date();
-          await assetsPage.sendGuestUploadInvite(env.testEmail);
+          await assetsPage.sendGuestUploadInvite(env.shareEmail);
         },
       );
 
