@@ -56,13 +56,13 @@ jobs:
           TEST_EMAIL: ${{ secrets.TEST_EMAIL }}
           SHARE_EMAIL: ${{ secrets.SHARE_EMAIL }}
 
-      - name: Upload Playwright report
+      - name: Upload test artifacts
         uses: actions/upload-artifact@v4
         if: always() && steps.playwright.outcome != 'cancelled'
         with:
-          name: playwright-report
+          name: test-artifacts
           path: |
-            playwright-report/
+            allure-results/
             test-results/
           if-no-files-found: warn
           retention-days: 14

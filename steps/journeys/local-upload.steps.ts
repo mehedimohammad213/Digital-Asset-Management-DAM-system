@@ -3,67 +3,63 @@ import fs from 'fs';
 import { Given, When, Then, expect } from '@src/fixtures/bdd.fixture';
 import { uniqueTestFile } from '@src/pages/asset-detail.page';
 import { cleanupAutomationAssetsInFolder } from '@src/support/asset-cleanup';
-import {
-  uniqueTestId,
-  LOCAL_UPLOAD_PREFIX,
-  USER_FOLDER,
-} from '@src/support/test-data';
+import { uniqueTestId, LOCAL_UPLOAD_PREFIX, USER_FOLDER } from '@src/support/test-data';
 
-Given('I navigate to the user folder with automation assets cleaned up', async ({
-  page,
-  assetsPage,
-  localUpload,
-}) => {
-  localUpload.testIdentity = uniqueTestId(LOCAL_UPLOAD_PREFIX);
-  localUpload.initialTitle = 'Automation QA Engineer';
-  localUpload.updatedTitle = 'Automation QA Engineer - Updated';
-  localUpload.initialDescription = `DAM automation test asset. Identity: ${localUpload.testIdentity}`;
-  localUpload.updatedDescription = `Updated description. Identity: ${localUpload.testIdentity}`;
-  localUpload.assetType = 'Video';
+Given(
+  'I navigate to the user folder with automation assets cleaned up',
+  async ({ page, assetsPage, localUpload }) => {
+    localUpload.testIdentity = uniqueTestId(LOCAL_UPLOAD_PREFIX);
+    localUpload.initialTitle = 'Automation QA Engineer';
+    localUpload.updatedTitle = 'Automation QA Engineer - Updated';
+    localUpload.initialDescription = `DAM automation test asset. Identity: ${localUpload.testIdentity}`;
+    localUpload.updatedDescription = `Updated description. Identity: ${localUpload.testIdentity}`;
+    localUpload.assetType = 'Video';
 
-  const sourceVideo = path.join(__dirname, '../../test-data/sample.mp4');
-  localUpload.uniqueVideo = uniqueTestFile(sourceVideo, 'automation-video');
-  localUpload.uploadedFileName = path.basename(localUpload.uniqueVideo);
+    const sourceVideo = path.join(__dirname, '../../test-data/sample.mp4');
+    localUpload.uniqueVideo = uniqueTestFile(sourceVideo, 'automation-video');
+    localUpload.uploadedFileName = path.basename(localUpload.uniqueVideo);
 
-  await assetsPage.navigateToAssets();
-  await assetsPage.openUserFolder(USER_FOLDER);
-  await cleanupAutomationAssetsInFolder(page, USER_FOLDER);
-});
+    await assetsPage.navigateToAssets();
+    await assetsPage.openUserFolder(USER_FOLDER);
+    await cleanupAutomationAssetsInFolder(page, USER_FOLDER);
+  },
+);
 
-When('I upload a unique mp4 with metadata', async ({
-  page,
-  assetsPage,
-  assetDetailPage,
-  localUpload,
-}) => {
-  await assetsPage.clickNewItem();
-  await assetsPage.uploadFileViaDragDrop(localUpload.uniqueVideo);
-  await assetDetailPage.fillMetadata({
-    title: localUpload.initialTitle,
-    type: localUpload.assetType,
-    dateTime: '',
-    description: localUpload.initialDescription,
-    tags: ['automation', 'playwright'],
-    isAutomatedTestdata: true,
-    hyperlink: 'https://qatest.marcombox.com/',
-  });
-  await assetDetailPage.save();
-  await assetsPage.openUserFolder(USER_FOLDER);
-  await expect(page.getByText(/[1-9]\d* items/i).first()).toBeVisible({ timeout: 60_000 });
-});
+When(
+  'I upload a unique mp4 with metadata',
+  async ({ page, assetsPage, assetDetailPage, localUpload }) => {
+    await assetsPage.clickNewItem();
+    await assetsPage.uploadFileViaDragDrop(localUpload.uniqueVideo);
+    await assetDetailPage.fillMetadata({
+      title: localUpload.initialTitle,
+      type: localUpload.assetType,
+      dateTime: '',
+      description: localUpload.initialDescription,
+      tags: ['automation', 'playwright'],
+      isAutomatedTestdata: true,
+      hyperlink: 'https://qatest.marcombox.com/',
+    });
+    await assetDetailPage.save();
+    await assetsPage.openUserFolder(USER_FOLDER);
+    await expect(page.getByText(/[1-9]\d* items/i).first()).toBeVisible({ timeout: 60_000 });
+  },
+);
 
-When('I open the asset and verify its metadata', async ({ assetsPage, assetDetailPage, localUpload }) => {
-  await assetsPage.openAssetByTitle(localUpload.initialTitle);
-  await assetDetailPage.verifyMetadata({
-    title: localUpload.initialTitle,
-    type: localUpload.assetType,
-    description: localUpload.initialDescription,
-    tags: ['automation', 'playwright'],
-    isAutomatedTestdata: true,
-    hyperlink: 'https://qatest.marcombox.com/',
-    fileName: localUpload.uploadedFileName,
-  });
-});
+When(
+  'I open the asset and verify its metadata',
+  async ({ assetsPage, assetDetailPage, localUpload }) => {
+    await assetsPage.openAssetByTitle(localUpload.initialTitle);
+    await assetDetailPage.verifyMetadata({
+      title: localUpload.initialTitle,
+      type: localUpload.assetType,
+      description: localUpload.initialDescription,
+      tags: ['automation', 'playwright'],
+      isAutomatedTestdata: true,
+      hyperlink: 'https://qatest.marcombox.com/',
+      fileName: localUpload.uploadedFileName,
+    });
+  },
+);
 
 When('I edit the asset and capture the item ID', async ({ assetDetailPage, localUpload }) => {
   const typeBeforeEdit = await assetDetailPage.getAssetType();
@@ -87,19 +83,17 @@ When('I edit the asset and capture the item ID', async ({ assetDetailPage, local
   expect(localUpload.itemId).toBeTruthy();
 });
 
-When('I search for the asset by identity and verify details', async ({
-  page,
-  assetsPage,
-  assetDetailPage,
-  localUpload,
-}) => {
-  await assetDetailPage.close();
-  await assetsPage.openAssetFromSearch(localUpload.testIdentity);
-  const bodyText = await page.locator('body').innerText();
-  expect(bodyText).toContain(localUpload.testIdentity);
-  expect(bodyText).toContain(localUpload.itemId);
-  await assetDetailPage.close();
-});
+When(
+  'I search for the asset by identity and verify details',
+  async ({ page, assetsPage, assetDetailPage, localUpload }) => {
+    await assetDetailPage.close();
+    await assetsPage.openAssetFromSearch(localUpload.testIdentity);
+    const bodyText = await page.locator('body').innerText();
+    expect(bodyText).toContain(localUpload.testIdentity);
+    expect(bodyText).toContain(localUpload.itemId);
+    await assetDetailPage.close();
+  },
+);
 
 When('I download the asset from the ellipsis menu', async ({ assetsPage, localUpload }) => {
   const filename = await assetsPage.downloadAssetFromMenu(localUpload.updatedTitle);

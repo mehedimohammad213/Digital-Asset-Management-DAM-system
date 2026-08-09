@@ -2,11 +2,11 @@
 
 ## Scope
 
-| Layer              | Coverage                                   | Tools                          |
-| ------------------ | ------------------------------------------ | ------------------------------ |
-| **API smoke**      | App reachability, login page availability  | Playwright `request` fixture   |
-| **Auth**           | Valid login, invalid password (negative)   | UI — unauthenticated project   |
-| **E2E regression** | Asset upload lifecycle, guest upload + OTP | Playwright + Page Object Model |
+| Layer              | Coverage                                   | Tools                            |
+| ------------------ | ------------------------------------------ | -------------------------------- |
+| **API smoke**      | App reachability, login page availability  | Playwright `request` fixture     |
+| **Auth**           | Valid login, invalid password (negative)   | UI — unauthenticated project     |
+| **E2E regression** | Asset upload lifecycle, guest upload + OTP | Cucumber BDD + Page Object Model |
 
 Out of scope: performance testing, visual regression, mobile viewports, production environment.
 
@@ -24,11 +24,12 @@ Out of scope: performance testing, visual regression, mobile viewports, producti
 
 ```
 global-setup.ts          → saves authenticated session to .auth/user.json
-src/fixtures/            → shared page objects + env config injected into tests
-src/pages/               → Page Object Model (selectors isolated from specs)
+features/                → Gherkin scenarios
+steps/                   → Cucumber step definitions
+src/fixtures/            → shared page objects + env config
+src/pages/               → Page Object Model (selectors isolated from steps)
 src/support/             → email polling, cleanup, test data factories
-tests/smoke/             → unauthenticated + API smoke tests
-tests/journeys/          → regression flows (reuse saved auth session)
+.features-gen/           → generated Playwright tests (bddgen)
 ```
 
 ## Environment Assumptions
@@ -48,7 +49,7 @@ tests/journeys/          → regression flows (reuse saved auth session)
 
 1. **Validate** — TypeScript compile, ESLint, Prettier
 2. **Playwright** — Docker container, 2 workers, 2 retries on failure
-3. **Artifacts** — HTML report, JUnit XML, traces/screenshots/videos (14-day retention)
+3. **Artifacts** — Allure results, JUnit XML, traces/screenshots/videos (14-day retention)
 
 ## Risk Register
 
@@ -63,5 +64,4 @@ tests/journeys/          → regression flows (reuse saved auth session)
 
 - Cross-browser matrix (Firefox, WebKit)
 - Visual regression on asset thumbnails
-- Test management integration (Xray / Allure)
 - API-level asset setup/teardown if backend endpoints become available

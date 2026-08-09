@@ -10,7 +10,10 @@ import { GuestUploadPage } from '@src/pages/guest-upload.page';
 Given('I open the user folder in DAM assets', async ({ assetsPage, guestUpload }) => {
   guestUpload.testIdentity = uniqueTestId(GUEST_UPLOAD_PREFIX);
   const sourceImage = path.join(__dirname, '../../test-data/sample.jpg');
-  guestUpload.uniqueImage = uniqueTestFile(sourceImage, `automation-image-${guestUpload.testIdentity}`);
+  guestUpload.uniqueImage = uniqueTestFile(
+    sourceImage,
+    `automation-image-${guestUpload.testIdentity}`,
+  );
   guestUpload.imageStem = path.parse(guestUpload.uniqueImage).name;
 
   await assetsPage.navigateToAssets();
@@ -25,49 +28,50 @@ When('I send a guest upload invite by email', async ({ assetsPage, env, guestUpl
   await assetsPage.sendGuestUploadInvite(env.testEmail);
 });
 
-When('the guest completes OTP verification and uploads a jpg', async ({
-  context,
-  env,
-  yopmailApi,
-  guestUpload,
-}) => {
-  const yopmailPage = await context.newPage();
-  const browserClient = new YopmailBrowserClient(yopmailPage, env.testEmail);
+When(
+  'the guest completes OTP verification and uploads a jpg',
+  async ({ context, env, yopmailApi, guestUpload }) => {
+    const yopmailPage = await context.newPage();
+    const browserClient = new YopmailBrowserClient(yopmailPage, env.testEmail);
 
-  const inviteMail = await waitForEmailWithFallback(yopmailApi, browserClient, {
-    bodyContains: 'marcombox',
-    since: guestUpload.guestLinkTimestamp ?? new Date(0),
-    timeoutMs: 120_000,
-  });
-  expect(inviteMail.link).toBeTruthy();
-  await yopmailPage.close();
+    const inviteMail = await waitForEmailWithFallback(yopmailApi, browserClient, {
+      bodyContains: 'marcombox',
+      since: guestUpload.guestLinkTimestamp ?? new Date(0),
+      timeoutMs: 120_000,
+    });
+    expect(inviteMail.link).toBeTruthy();
+    await yopmailPage.close();
 
-  const guestPage = await context.newPage();
-  const guestUploadPage = new GuestUploadPage(guestPage);
-  await guestUploadPage.openLink(inviteMail.link!);
+    const guestPage = await context.newPage();
+    const guestUploadPage = new GuestUploadPage(guestPage);
+    await guestUploadPage.openLink(inviteMail.link!);
 
-  const otpTimestamp = new Date();
-  const otpYopmailPage = await context.newPage();
-  const otpBrowserClient = new YopmailBrowserClient(otpYopmailPage, env.testEmail);
-  const otpMail = await waitForEmailWithFallback(yopmailApi, otpBrowserClient, {
-    bodyMatches: /\b\d{4,8}\b/,
-    since: otpTimestamp,
-    timeoutMs: 120_000,
-  });
-  const otp = extractOtpFromEmailBody(otpMail.body);
-  await guestUploadPage.enterOtp(otp);
-  await otpYopmailPage.close();
+    const otpTimestamp = new Date();
+    const otpYopmailPage = await context.newPage();
+    const otpBrowserClient = new YopmailBrowserClient(otpYopmailPage, env.testEmail);
+    const otpMail = await waitForEmailWithFallback(yopmailApi, otpBrowserClient, {
+      bodyMatches: /\b\d{4,8}\b/,
+      since: otpTimestamp,
+      timeoutMs: 120_000,
+    });
+    const otp = extractOtpFromEmailBody(otpMail.body);
+    await guestUploadPage.enterOtp(otp);
+    await otpYopmailPage.close();
 
-  await guestUploadPage.uploadFile(guestUpload.uniqueImage);
-  await guestPage.close();
-});
+    await guestUploadPage.uploadFile(guestUpload.uniqueImage);
+    await guestPage.close();
+  },
+);
 
-Then('the uploaded jpg should appear in the DAM folder', async ({ page, assetsPage, guestUpload }) => {
-  await page.bringToFront();
-  await assetsPage.navigateToAssets();
-  await assetsPage.openUserFolder(USER_FOLDER);
-  await assetsPage.verifyAssetExists(guestUpload.imageStem);
-});
+Then(
+  'the uploaded jpg should appear in the DAM folder',
+  async ({ page, assetsPage, guestUpload }) => {
+    await page.bringToFront();
+    await assetsPage.navigateToAssets();
+    await assetsPage.openUserFolder(USER_FOLDER);
+    await assetsPage.verifyAssetExists(guestUpload.imageStem);
+  },
+);
 
 Then('I delete the uploaded asset and logout', async ({ assetsPage, loginPage, guestUpload }) => {
   try {
